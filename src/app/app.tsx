@@ -17,9 +17,9 @@ export function App() {
   const page = hash === '#/notes' ? 'notes' : hash === '#/links' ? 'links' : hash === '#/calendar' ? 'calendar' : 'workspace'
   return (
     <AppProviders>
-      <WorkspaceAccess>{(leave, leaving) => (
+      <WorkspaceAccess>{(leave, leaving, token) => (
         <AppShell page={page} onLeave={leave} leaving={leaving}>
-          {page === 'workspace' ? <WorkspacePage /> : page === 'calendar' ? <CalendarPage /> : page === 'notes' ? <NotesPage /> : <LinksPage />}
+          {page === 'workspace' ? <WorkspacePage /> : page === 'calendar' ? <CalendarPage /> : page === 'notes' ? <NotesPage token={token} /> : <LinksPage />}
         </AppShell>
       )}</WorkspaceAccess>
     </AppProviders>

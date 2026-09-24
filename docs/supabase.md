@@ -30,7 +30,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 
 ## 데이터를 추가할 때
 
-현재 캘린더·메모·링크는 예시 화면이며 데이터 저장은 구현하지 않았습니다. 정적 번들의 예시 문구는 비밀 데이터가 아닙니다. 화면의 입장 제한만으로 새 DB 테이블이 보호되지는 않습니다.
+현재 메모함은 실제 DB 저장을 사용합니다. 캘린더·링크는 예시 화면이며 데이터 저장은 구현하지 않았습니다. 정적 번들의 예시 문구는 비밀 데이터가 아닙니다. 화면의 입장 제한만으로 새 DB 테이블이 보호되지는 않습니다.
 
 실제 데이터를 저장하는 테이블은 반드시 RLS를 활성화하고, 아래와 같이 `workspace_session_valid()`를 모든 읽기·쓰기 정책에 적용합니다. 기존의 무조건 허용 정책은 함께 두지 않습니다. API 요청에는 `x-workspace-session` 헤더로 세션 토큰을 보내야 합니다. 이 세션은 Supabase Auth JWT가 아니며 `auth.uid()` 또는 `authenticated` 역할을 사용하지 않습니다.
 
@@ -48,9 +48,25 @@ create policy workspace_access on public.your_table
 
 ## 검증
 
+메모함 설정은 아래 절을 참고하세요.
+
 - `npm run check`: 린트·타입·프로덕션 빌드.
 - `node --test tests/workspace-api.test.mjs`: 네트워크 모의 응답으로 인증 API의 성공·실패·설정 검증.
 - SQL 적용 후 `supabase/workspace-access.test.sql`을 SQL Editor에서 실행하면 세션·제한·권한을 검사합니다. 테스트는 마지막에 롤백하므로 기존 코드를 바꾸지 않습니다.
 - 브라우저에서 틀린 코드, 올바른 코드, 새로고침, 직접 `#/notes` 접근, 나가기 후 뒤로 가기, 모바일 배치·키보드 포커스를 확인합니다.
 
 참고: [Supabase SQL 함수와 권한](https://supabase.com/docs/guides/database/functions), [API 요청 헤더·RLS](https://supabase.com/docs/guides/api/securing-your-api), [공개 API 키](https://supabase.com/docs/guides/getting-started/api-keys).
+
+## 메모함 테이블과 임시 폴더
+
+1. 작업실 접속 설정을 완료한 프로젝트의 SQL Editor에서 [`supabase/notes.sql`](../supabase/notes.sql)을 실행합니다. 기존 작업실의 보안코드 SQL은 다시 실행할 필요가 없습니다.
+2. 기존에 메모 테이블을 만들었다면 같은 `notes.sql`을 다시 실행하세요. 기존 폴더는 최상위로 유지되며 메모도 보존됩니다. `parent_id` 열과 인덱스, 계층 생성 RPC가 추가됩니다. 처음 실행하면 `note_folders`, `notes`, RLS 정책과 `manage_notes` RPC가 생성됩니다. 폴더가 하나도 없으면 `임시 폴더`가 생성되며, 재실행 시 기존 데이터는 유지됩니다.
+3. 앱의 메모함에서 폴더 이름을 수정하거나 새 폴더를 추가합니다. 메모는 반드시 기존 폴더를 선택해 저장합니다.
+
+폴더 안에 여러 단계의 하위 폴더를 만들 수 있습니다. 폴더 추가 창에서 최상위 또는 기존 폴더 경로를 위치로 선택합니다. 폴더 필터와 메모 저장·이동 선택지도 전체 경로로 표시됩니다. 상위 폴더로 필터링하면 하위 폴더의 메모도 포함됩니다. 폴더명은 60자, 메모 제목은 120자, 내용은 50,000자까지 입력할 수 있습니다. 제목과 폴더 이름은 공백만 저장할 수 없습니다. 폴더 삭제는 `ON DELETE CASCADE`로 모든 하위 폴더와 포함된 메모를 함께 삭제하며, UI에서 전체 하위 폴더·메모 수와 복구 불가 안내를 확인해야 진행됩니다. 임시 폴더도 수정·삭제할 수 있습니다. 모든 폴더를 삭제한 경우 화면에서 다시 폴더를 만들 수 있습니다.
+
+`manage_notes`는 `security invoker`로 실행되어 RLS를 유지하고, `x-workspace-session` 헤더를 검증합니다. 유효한 세션 없이 RPC 및 직접 테이블 접근으로 데이터를 읽거나 쓸 수 없습니다. 화면에서는 추가·수정·이동·삭제 성공 후 서버 목록을 반영합니다. 최신순은 작성일 기준이며 수정일은 별도로 저장합니다.
+
+- `npm test`: 실제 메모 SQL을 로컬 PGlite에서 실행하여 저장·수정·이동·연쇄 삭제·무효 세션 접근 차단을 검사합니다. 세션 검증 함수만 테스트용으로 대체합니다.
+- `npm run test:ui`: 운영 서버 대신 위 로컬 DB와 모의 인증을 사용해 모바일·데스크톱·키보드·오류 복구를 검사합니다.
+- 운영 Supabase SQL 적용 및 네트워크 연결은 별도 확인이 필요합니다. 자동 테스트는 운영 데이터를 수정하지 않습니다.

@@ -8,7 +8,7 @@ export function createWorkspaceApi(url: string, key: string) {
     configured = parsed.protocol === 'https:' && (key.startsWith('sb_publishable_') || legacyAnon)
   } catch { /* Missing or unsafe configuration keeps the workspace locked. */ }
 
-  async function rpc(name: string, body: Record<string, string>, token?: string): Promise<unknown> {
+  async function rpc(name: string, body: Record<string, unknown>, token?: string): Promise<unknown> {
     if (!configured) throw new Error('Supabase 연결 설정을 확인해 주세요.')
     const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json' }
     if (key.startsWith('eyJ')) headers.Authorization = `Bearer ${key}`
@@ -28,6 +28,7 @@ export function createWorkspaceApi(url: string, key: string) {
 
   return {
     configured,
+    rpc,
     async unlock(code: string): Promise<UnlockResult> {
       const result = await rpc('unlock_workspace', { security_code: code })
       if (typeof result === 'object' && result !== null && 'status' in result) {

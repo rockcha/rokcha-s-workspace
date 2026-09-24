@@ -19,7 +19,7 @@ function storeToken(token: string) {
   } catch { /* The current tab can still use an in-memory session. */ }
 }
 
-export function WorkspaceAccess({ children }: { children: (leave: () => Promise<void>, leaving: boolean) => ReactNode }) {
+export function WorkspaceAccess({ children }: { children: (leave: () => Promise<void>, leaving: boolean, token: string) => ReactNode }) {
   const [token, setToken] = useState(readToken)
   const [verified, setVerified] = useState(false)
   const [checking, setChecking] = useState(() => Boolean(readToken()))
@@ -105,7 +105,7 @@ export function WorkspaceAccess({ children }: { children: (leave: () => Promise<
     }
   }
 
-  if (token && verified) return children(leave, leaving)
+  if (token && verified) return children(leave, leaving, token)
 
   return (
     <main className="flex min-h-svh items-center justify-center px-6 py-12">
