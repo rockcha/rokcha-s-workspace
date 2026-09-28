@@ -49,6 +49,8 @@ scripts/npm.ps1                # Windows 로컬 Node 실행 지원
 
 ## 의존 방향
 
+날씨는 `pages/weather-page.tsx`와 `features/weather/api.ts`로 구성하며 `#/weather`에서 엽니다. Open-Meteo 날씨·CAMS 대기질 API를 독립 조회하여 일부 실패 시 나머지 정보를 유지합니다. 요청은 12초 제한과 페이지/지역 변경 시 취소를 적용합니다. 기본 지역은 서울이며 선택한 주요 도시 ID만 localStorage에 보관합니다. 키·SQL 추가 없이 개인 비상업용 API를 사용합니다. 대기질은 실측이 아닌 모델 예측 농도이며 공급자를 화면에 표시합니다. location.ts의 공유 위치 상태는 날씨와 캘린더가 함께 사용합니다. 현재 위치 좌표는 메모리에만 유지하고 수동 도시 선택만 localStorage에 저장합니다. 캘린더는 daily weather_code를 최대 16일 조회하며 요청 실패가 일정 기능을 막지 않습니다. air-grade.ts는 PM10 30/80/150, PM2.5 15/35/75 경계값을 적용한 참고 등급을 계산합니다.
+
 메모함의 폴더 위치는 `#/notes?folder=<id>`, 새 메모는 `#/notes/new?folder=<id>`, 기존 메모 상세는 `#/notes/<id>?folder=<id>`로 연결합니다. 상세 페이지는 검증된 세션으로 목록을 조회하며 저장 성공 후 선택한 폴더로 돌아갑니다. 새로고침과 브라우저 뒤로 가기에서도 주소의 폴더·메모를 불러옵니다.
 
 `app → pages → features → components/ui → lib` 방향을 유지합니다. 공통 레이아웃은 `app`에서 조립합니다. `components/ui`가 페이지나 업무 기능을 import해서는 안 됩니다. `config`는 하위 계층에서도 참조할 수 있는 정적 설정입니다.
@@ -59,7 +61,7 @@ scripts/npm.ps1                # Windows 로컬 Node 실행 지원
 2. 기능의 상태·API·컴포넌트가 생기면 `features/<name>/` 아래에 가까이 둡니다.
 3. 여러 기능에서 실제로 재사용하는 UI만 `components`로 올립니다. 공통 훅이 생길 때 `hooks/`를 만듭니다.
 4. 한 화면 안에서만 쓰는 데이터·헬퍼를 무조건 공통 폴더로 옮기지 않습니다.
-5. 현재 일곱 화면은 app.tsx의 해시 주소 구독으로 전환합니다. 중첩 경로 등 복잡한 탐색이 필요해지면 라우터를 도입합니다.
+5. 현재 여덟 화면은 app.tsx의 해시 주소 구독으로 전환합니다. 중첩 경로 등 복잡한 탐색이 필요해지면 라우터를 도입합니다.
 
 ## 자주 수정하는 위치
 
@@ -98,3 +100,5 @@ components/layout/page-header.tsx는 각 화면에서 재사용하는 고정 헤
 자료실은 pages/materials-page.tsx와 features/materials의 API·Google SDK·버튼으로 구성합니다. materials.sql의 전용 테이블과 manage_materials RPC를 사용합니다. OAuth 토큰은 영구 저장하지 않으며 파일 원본은 드라이브에 있습니다. 설정은 docs/drive.md에 있습니다.
 
 자료실의 material_folders는 parent_id로 하위 폴더를 구성하고 materials.folder_id는 폴더 삭제 시 null로 변경합니다. manage_materials는 files/folders를 함께 반환합니다. FolderPicker와 buildFolderTree를 재사용하며 download-url.ts에서 파일 형식에 따른 다운로드 주소를 구성합니다.
+
+현재 위치의 지역명은 reverse-geocode.ts에서 BigDataCloud의 브라우저용 API로 조회합니다. 사용자가 위치 권한으로 제공한 현재 좌표만 전송하며 시·구·동 등 반환된 지역명을 중복 제거해 표시합니다. 요청은 8초 제한을 두고 수동 지역 변경·화면 이탈 시 취소합니다. 조회 실패 시 좌표를 표시하며 날씨 조회는 유지합니다. 지역명·좌표는 영구 저장하지 않습니다. API 문서: https://www.bigdatacloud.com/docs/article/why-is-reverse-geocoding-api-free

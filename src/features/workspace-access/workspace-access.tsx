@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Leaf, LockKeyhole, ArrowRight, LoaderCircle } from 'lucide-react'
+import { Leaf, LoaderCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { siteConfig } from '@/config/site'
@@ -110,17 +110,14 @@ export function WorkspaceAccess({ children }: { children: (leave: () => Promise<
   return (
     <main className="flex min-h-svh items-center justify-center px-6 py-12">
       <section aria-labelledby="access-title" className="w-full max-w-sm">
-        <div className="mb-10 flex items-center gap-2 text-sm text-primary"><Leaf className="size-5" strokeWidth={1.5} aria-hidden="true" />{siteConfig.name}</div>
-        <div className="mb-6 flex size-12 items-center justify-center rounded-2xl border bg-card text-primary"><LockKeyhole className="size-5" strokeWidth={1.5} aria-hidden="true" /></div>
-        <h1 id="access-title" className="text-3xl tracking-tight">나만의 작업실로</h1>
-        <p className="mt-3 text-sm leading-7 text-muted-foreground">보안코드를 입력하고<br />오늘의 생각을 이어 가세요.</p>
+        <h1 id="access-title" className="flex items-center justify-center gap-3 text-3xl tracking-tight"><Leaf className="size-6 shrink-0 text-primary" strokeWidth={1.5} aria-hidden="true" />{siteConfig.name}</h1>
         {checking ? <p role="status" className="mt-8 flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="size-4 motion-safe:animate-spin" aria-hidden="true" />작업실을 열고 있어요.</p> : (
           <form className="mt-9" onSubmit={(event) => { event.preventDefault(); void enter() }}>
             <label htmlFor="security-code" className="text-sm">보안코드</label>
             <input id="security-code" name="password" type="password" autoComplete="current-password" autoFocus required maxLength={72} value={code} onChange={event => setCode(event.target.value)} disabled={busy || !workspaceApi.configured} aria-invalid={Boolean(error)} aria-describedby={error ? 'access-error' : undefined} placeholder="보안코드를 입력해 주세요" className="mt-2 h-12 w-full rounded-lg border bg-card px-4 text-sm outline-none placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50" />
             {!workspaceApi.configured && <p role="alert" className="mt-3 text-sm leading-6 text-muted-foreground">작업실 연결 설정이 필요해요. 환경 변수를 설정한 뒤 다시 열어 주세요.</p>}
             {error && <p id="access-error" role="alert" className="mt-3 text-sm leading-6 text-destructive">{error}</p>}
-            <Button type="submit" disabled={busy || !code || !workspaceApi.configured} className="mt-5 h-12 w-full rounded-lg">{busy ? '확인하는 중…' : '작업실 들어가기'}{busy ? <LoaderCircle className="motion-safe:animate-spin" aria-hidden="true" /> : <ArrowRight aria-hidden="true" />}</Button>
+            <Button type="submit" disabled={busy || !code || !workspaceApi.configured} className="mt-5 h-12 w-full rounded-lg">{busy ? <><LoaderCircle className="motion-safe:animate-spin" aria-hidden="true" />확인하는 중…</> : '들어가기'}</Button>
           </form>
         )}
       </section>

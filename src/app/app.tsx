@@ -8,6 +8,7 @@ import { NoteDetailPage } from '@/pages/note-detail-page'
 import { LinksPage } from '@/pages/links-page'
 import { MaterialsPage } from '@/pages/materials-page'
 import { NewsPage } from '@/pages/news-page'
+import { WeatherPage } from '@/pages/weather-page'
 import { WorkspacePage } from '@/pages/workspace-page'
 import { WorkspaceAccess } from '@/features/workspace-access/workspace-access'
 import { useWorkspaceMemo } from '@/features/workspace-memo/use-workspace-memo'
@@ -33,7 +34,7 @@ function WorkspaceContent({ page, token, hash, leave, leaving }: { page: string;
     await leave()
   }
   return <AppShell page={page} onLeave={onLeave} leaving={leaving}>
-    {page === 'workspace' ? <WorkspacePage memo={memo} calendar={calendar} /> : page === 'calendar' ? validDate(date) ? <CalendarDayPage key={date} date={date} calendar={calendar} /> : <CalendarPage key={monthKey} calendar={calendar} monthKey={monthKey} /> : page === 'timetable' ? <TimetablePage token={token} /> : page === 'notes' ? noteId ? <NoteDetailPage key={`${token}:${hash}`} token={token} noteId={noteId} folderId={noteFolder} /> : <NotesPage key={noteFolder} token={token} folderId={noteFolder} /> : page === 'materials' ? <MaterialsPage key={token} token={token} /> : page === 'news' ? <NewsPage hash={hash} /> : <LinksPage token={token} />}
+    {page === 'workspace' ? <WorkspacePage memo={memo} calendar={calendar} /> : page === 'calendar' ? validDate(date) ? <CalendarDayPage key={date} date={date} calendar={calendar} /> : <CalendarPage key={monthKey} calendar={calendar} monthKey={monthKey} /> : page === 'timetable' ? <TimetablePage token={token} /> : page === 'notes' ? noteId ? <NoteDetailPage key={`${token}:${hash}`} token={token} noteId={noteId} folderId={noteFolder} /> : <NotesPage key={noteFolder} token={token} folderId={noteFolder} /> : page === 'materials' ? <MaterialsPage key={token} token={token} /> : page === 'news' ? <NewsPage hash={hash} /> : page === 'weather' ? <WeatherPage /> : <LinksPage token={token} />}
     <FloatingWorkspaceMemo memo={memo} />
   </AppShell>
 }
@@ -45,7 +46,7 @@ function subscribe(callback: () => void) {
 
 export function App() {
   const hash = useSyncExternalStore(subscribe, () => window.location.hash)
-  const page = hash === '#/materials' ? 'materials' : /^#\/news(?:$|[/?])/.test(hash) ? 'news' : /^#\/notes(?:$|[/?])/.test(hash) ? 'notes' : hash === '#/links' ? 'links' : hash === '#/timetable' ? 'timetable' : /^#\/calendar(?:$|[/?])/.test(hash) ? 'calendar' : 'workspace'
+  const page = hash === '#/weather' ? 'weather' : hash === '#/materials' ? 'materials' : /^#\/news(?:$|[/?])/.test(hash) ? 'news' : /^#\/notes(?:$|[/?])/.test(hash) ? 'notes' : hash === '#/links' ? 'links' : hash === '#/timetable' ? 'timetable' : /^#\/calendar(?:$|[/?])/.test(hash) ? 'calendar' : 'workspace'
   return (
     <AppProviders>
       <WorkspaceAccess>{(leave, leaving, token) => (

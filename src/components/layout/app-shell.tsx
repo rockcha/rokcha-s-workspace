@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react'
-import { CalendarDays, FolderOpen, House, Leaf, Link2, LogOut, Newspaper, StickyNote, Table2 } from 'lucide-react'
+import { CalendarDays, CloudSun, FolderOpen, House, Leaf, Link2, LogOut, Newspaper, StickyNote, Table2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { siteConfig } from '@/config/site'
 import { cn } from '@/lib/utils'
@@ -12,6 +12,7 @@ const navigation = [
   { id: 'links', label: '링크함', icon: Link2 },
   { id: 'materials', label: '자료실', icon: FolderOpen },
   { id: 'news', label: '뉴스함', icon: Newspaper },
+  { id: 'weather', label: '날씨', icon: CloudSun },
 ] as const
 
 export function AppShell({ children, page, onLeave, leaving }: PropsWithChildren<{ page: string; onLeave: () => Promise<void>; leaving: boolean }>) {

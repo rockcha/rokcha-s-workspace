@@ -1,16 +1,29 @@
 import { PageHeader } from '@/components/layout/page-header'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { EntryEditor } from '@/features/calendar/entry-editor'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { dateKey, sortEntries, useToday } from '@/features/calendar/use-calendar'
 import type { CalendarState } from '@/features/calendar/use-calendar'
+import { useWeatherLocation } from '@/features/weather/location'
+import { loadCalendarWeather, weatherDescription, weatherEmoji } from '@/features/weather/api'
 
 const weekdays = ['월', '화', '수', '목', '금', '토', '일']
 
 export function CalendarPage({ calendar, monthKey }: { calendar: CalendarState; monthKey?: string }) {
   const todayKey = useToday()
+  const location = useWeatherLocation()
+  const [forecast, setForecast] = useState<Record<string, number>>({})
+  const [weatherError, setWeatherError] = useState(false)
+  const [weatherRetry, setWeatherRetry] = useState(0)
+  useEffect(() => {
+    const controller = new AbortController()
+    setForecast({})
+    setWeatherError(false)
+    void loadCalendarWeather(location, controller.signal).then(data => { if (!controller.signal.aborted) setForecast(data) }).catch(() => { if (!controller.signal.aborted) setWeatherError(true) })
+    return () => controller.abort()
+  }, [location, todayKey, weatherRetry])
   const [adding, setAdding] = useState(false)
   const addButton = useRef<HTMLButtonElement>(null)
   const month = new Date(`${monthKey ?? todayKey.slice(0, 7)}-01T12:00:00`)
@@ -46,14 +59,14 @@ export function CalendarPage({ calendar, monthKey }: { calendar: CalendarState; 
             const entries = sortEntries(calendar.entries.filter(entry => entry.date === key && entry.type === 'event'))
             return <td key={column} className="border-r border-b p-0.5 align-top last:border-r-0 sm:p-1">
               <a href={`#/calendar/${key}`} aria-label={`${key} 상세 보기`} className="block h-28 overflow-hidden rounded-md p-0.5 text-left hover:bg-secondary/60 focus-visible:outline-2 focus-visible:outline-ring sm:h-32 sm:p-1">
-                <time dateTime={key} aria-current={isToday ? 'date' : undefined} className={cn('flex size-7 items-center justify-center rounded-full', date.getMonth() !== monthIndex && 'text-muted-foreground/45', isToday && 'bg-primary text-primary-foreground')}>{date.getDate()}</time>
+                <span className="flex items-center justify-between"><time dateTime={key} aria-current={isToday ? 'date' : undefined} className={cn('flex size-5 shrink-0 items-center justify-center rounded-full text-xs sm:size-7 sm:text-sm', date.getMonth() !== monthIndex && 'text-muted-foreground/45', isToday && 'bg-primary text-primary-foreground')}>{date.getDate()}</time>{forecast[key] !== undefined && <span role="img" aria-label={`${location.name} ${weatherDescription(forecast[key]).label} 예보`} title={`${location.name} · ${weatherDescription(forecast[key]).label}`} className="shrink-0 text-[10px] leading-none sm:text-base">{weatherEmoji(forecast[key])}</span>}</span>
                 {entries.slice(0, 2).map(entry => <span key={entry.id} className={cn('mt-1 block truncate rounded px-1 py-1 text-[10px] sm:text-xs', entry.type === 'event' ? 'bg-secondary text-secondary-foreground' : 'border border-dashed text-muted-foreground')}><span className="hidden sm:inline">{entry.type === 'note' ? '노트 · ' : entry.time ? `${entry.time} ` : ''}</span>{entry.title}</span>)}
                 {entries.length > 2 && <span className="block text-[10px] text-muted-foreground">+{entries.length - 2}개</span>}
               </a>
             </td>
           })}</tr>)}</tbody>
         </table>
-        <div className="flex flex-wrap items-center gap-4 px-5 py-4 text-xs text-muted-foreground"><span>● 오늘</span><span>일정 · 시간 또는 종일</span><span>노트 · 날짜별 기록</span></div>
+        {weatherError && <div className="flex flex-wrap items-center gap-2 border-t px-5 py-3 text-xs text-muted-foreground"><span role="status">날씨를 불러오지 못했어요.</span><Button variant="ghost" size="sm" onClick={() => setWeatherRetry(value => value + 1)}>날씨 다시 불러오기</Button></div>}
       </div>
       {adding && <EntryEditor date={monthKey && monthKey !== todayKey.slice(0, 7) ? `${monthKey}-01` : todayKey} calendar={calendar} onClose={() => setAdding(false)} onCloseAutoFocus={() => addButton.current?.focus()} />}
     </section>
