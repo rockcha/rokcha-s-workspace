@@ -97,3 +97,12 @@ create policy workspace_access on public.your_table
 이전 브라우저에 기록이 있으면 입장 시 **기존 기록 가져오기**를 누릅니다. 이전 노트의 제목은 본문 앞에 보존하고 같은 날짜의 노트는 합칩니다. 일정·시간표·메모는 하나의 트랜잭션으로 옮기며 서버 기록과 충돌하면 전체를 취소하고 브라우저 원본을 남깁니다. 성공이 확인된 원본만 제거하고, 같은 기록을 다시 가져와도 중복 생성하지 않습니다. **나중에 · 서버 기록 보기**를 선택하면 로컬 원본을 보관한 채 서버 기록을 사용합니다. 새 기록은 로컬 저장소에 저장하지 않습니다.
 
 `npm test`와 `npm run test:ui`는 실제 SQL을 PGlite에 실행해 제약·충돌·권한과 화면 동작을 확인합니다. 운영 Supabase에는 자동 적용되지 않으므로 SQL Editor 실행은 별도로 필요합니다.
+
+## 동기부여의 방 설정
+
+기존 접속 설정 후 [`supabase/motivation.sql`](../supabase/motivation.sql) 전체를 SQL Editor에서 실행하세요. 기존 콘텐츠는 재실행해도 유지됩니다. 글귀(최대 5,000자), 출처·영상 제목(120자), 유튜브 영상 ID와 메모를 저장합니다. 세션 없는 접근 및 직접 쓰기는 차단하고 수정·삭제 시 revision을 확인합니다. 운영 SQL은 로컬 검증에 포함되지 않으므로 별도 적용이 필요합니다. 유튜브 플레이어는 [공식 iframe 문서](https://developers.google.com/youtube/player_parameters)를 따릅니다.
+
+
+## 할 일 리스트 설정
+
+기존 프로젝트도 [supabase/workspace-data.sql](../supabase/workspace-data.sql) 전체를 SQL Editor에서 다시 실행하세요. workspace_todos 테이블과 todo_list/save/delete RPC 분기가 추가되며 기존 일정·노트·시간표·메모는 유지됩니다. 할 일은 최대 200자이며 완료 상태도 서버에 저장합니다. 직접 쓰기와 세션 없는 접근을 차단하고 수정·삭제에는 revision을 검사합니다. 운영 SQL 적용은 로컬 테스트에 포함되지 않습니다.

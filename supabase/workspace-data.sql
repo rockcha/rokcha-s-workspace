@@ -1,5 +1,17 @@
 -- workspace-access.sql 적용 후 실행합니다. 기존 데이터는 유지됩니다.
 begin;
+create table if not exists public.workspace_todos (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (char_length(btrim(title)) between 1 and 200),
+  completed boolean not null default false,
+  revision integer not null default 1,
+  created_at timestamptz not null default now()
+);
+alter table public.workspace_todos enable row level security;
+revoke all on public.workspace_todos from public, anon, authenticated;
+grant select on public.workspace_todos to anon;
+drop policy if exists workspace_access on public.workspace_todos;
+create policy workspace_access on public.workspace_todos for select to anon using ((select public.workspace_session_valid()));
 create table if not exists public.calendar_entries (
   id uuid primary key default gen_random_uuid(),
   type text not null check (type in ('event', 'note')),
@@ -65,10 +77,25 @@ begin
     raise exception 'Workspace session expired' using errcode = '42501';
   end if;
   -- 쓰기 순서를 통일해 노트 중복, 수업 시간 중복, 가져오기 충돌을 방지합니다.
-  if action not in ('calendar_list', 'lesson_list', 'memo_get') then
-    lock table public.calendar_entries, public.timetable_lessons, public.workspace_memo, public.workspace_imports in share row exclusive mode;
+  if action not in ('calendar_list', 'lesson_list', 'todo_list', 'memo_get') then
+    lock table public.calendar_entries, public.timetable_lessons, public.workspace_memo, public.workspace_imports, public.workspace_todos in share row exclusive mode;
   end if;
   case action
+    when 'todo_list' then null;
+    when 'todo_save' then
+      target := (payload->>'id')::uuid;
+      select to_jsonb(t) into current_item from public.workspace_todos t where id = target;
+      if current_item is not null and (payload->>'revision')::integer is distinct from (current_item->>'revision')::integer then
+        return jsonb_build_object('error', 'conflict');
+      elsif current_item is null and coalesce((payload->>'revision')::integer, 0) <> 0 then
+        return jsonb_build_object('error', 'conflict');
+      end if;
+      insert into public.workspace_todos(id, title, completed)
+      values(target, btrim(payload->>'title'), (payload->>'completed')::boolean)
+      on conflict(id) do update set title=excluded.title, completed=excluded.completed, revision=public.workspace_todos.revision+1;
+    when 'todo_delete' then
+      delete from public.workspace_todos where id=(payload->>'id')::uuid and revision=(payload->>'revision')::integer;
+      if not found then return jsonb_build_object('error', 'conflict'); end if;
     when 'calendar_list' then null;
     when 'lesson_list' then null;
     when 'memo_get' then null;
@@ -146,6 +173,7 @@ begin
       return jsonb_build_object('ok', true);
     else raise exception 'Unknown workspace data action';
   end case;
+  if action like 'todo_%' then return (select coalesce(jsonb_agg(t order by t.completed, t.created_at desc, t.id),'[]'::jsonb) from public.workspace_todos t); end if;
   if action like 'calendar_%' then return (select coalesce(jsonb_agg(c order by c.date,c.time,c.id),'[]'::jsonb) from public.calendar_entries c); end if;
   if action like 'lesson_%' then return (select coalesce(jsonb_agg(l order by l.start,l.id),'[]'::jsonb) from public.timetable_lessons l); end if;
   return (select jsonb_build_object('content', content, 'revision', revision) from public.workspace_memo where id);

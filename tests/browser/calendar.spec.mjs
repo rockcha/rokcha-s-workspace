@@ -141,6 +141,7 @@ test('일정·노트 CRUD와 오늘 목록, 연도 경계 D-day 및 저장 유�
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   }
   await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.getByRole('tab', { name: '다가오는 일정', exact: true }).click()
   const upcoming = page.getByRole('region', { name: '다가오는 일정' })
   await expect(upcoming).toContainText('새해 수업')
   await expect(upcoming).toContainText('D-1')
@@ -148,6 +149,7 @@ test('일정·노트 CRUD와 오늘 목록, 연도 경계 D-day 및 저장 유�
   await expect(upcoming).not.toContainText('미래 노트 숨김')
   await expect(upcoming).not.toContainText('지난 일정 숨김')
   await page.reload()
+  await page.getByRole('tab', { name: '다가오는 일정', exact: true }).click()
   await expect(upcoming).toContainText('D-1')
   await page.screenshot({ path: 'test-results/calendar-workspace.png', fullPage: true })
   await page.getByRole('link', { name: '캘린더', exact: true }).click()

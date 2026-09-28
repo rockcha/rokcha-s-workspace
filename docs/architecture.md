@@ -102,3 +102,8 @@ components/layout/page-header.tsx는 각 화면에서 재사용하는 고정 헤
 자료실의 material_folders는 parent_id로 하위 폴더를 구성하고 materials.folder_id는 폴더 삭제 시 null로 변경합니다. manage_materials는 files/folders를 함께 반환합니다. FolderPicker와 buildFolderTree를 재사용하며 download-url.ts에서 파일 형식에 따른 다운로드 주소를 구성합니다.
 
 현재 위치의 지역명은 reverse-geocode.ts에서 BigDataCloud의 브라우저용 API로 조회합니다. 사용자가 위치 권한으로 제공한 현재 좌표만 전송하며 시·구·동 등 반환된 지역명을 중복 제거해 표시합니다. 요청은 8초 제한을 두고 수동 지역 변경·화면 이탈 시 취소합니다. 조회 실패 시 좌표를 표시하며 날씨 조회는 유지합니다. 지역명·좌표는 영구 저장하지 않습니다. API 문서: https://www.bigdatacloud.com/docs/article/why-is-reverse-geocoding-api-free
+
+동기부여의 방은 pages/motivation-page.tsx와 features/motivation에 둡니다. 유형(kind)은 quote/youtube이며 콘텐츠별 UI와 URL 검증을 분리합니다. manage_motivation RPC와 motivation_items 테이블은 세션 검증·읽기 RLS·수정/삭제 revision 충돌 검사를 적용합니다. 직접 테이블 쓰기는 차단합니다. 유튜브 ID만 저장하고 썸네일·플레이어 주소는 검증한 ID로 구성합니다. 플레이어는 클릭 시 생성하며 동시에 하나만 재생합니다.
+
+
+할 일은 features/todos의 useTodos와 TodoList로 구성합니다. 기존 useCollection과 manage_workspace_data의 todo_list/save/delete를 재사용하며 workspace_todos 테이블에 저장합니다. 세션 기반 RLS, 직접 쓰기 차단, revision 충돌 검사를 적용합니다. 작업실 상단 일정 카드는 Radix Tabs로 오늘 일정·다가오는 일정을 전환하고 아래에는 할 일 리스트를 배치합니다.

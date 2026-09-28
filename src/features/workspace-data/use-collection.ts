@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { requestWorkspaceData } from '@/features/workspace-data/api'
 
-export function useCollection<T>(token: string, domain: 'calendar' | 'lesson', validate: (value: unknown) => value is T) {
+export function useCollection<T>(token: string, domain: 'calendar' | 'lesson' | 'todo', validate: (value: unknown) => value is T) {
   const [items, setItems] = useState<T[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

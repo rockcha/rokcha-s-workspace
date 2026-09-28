@@ -112,7 +112,7 @@ export function LinksManager({ token }: { token: string }) {
       if (!editor.folder_id || (editor.kind === 'link' && !editor.title.trim())) { setFormError('폴더를 선택하고 링크 제목을 입력해 주세요.'); return }
       void mutate(editor.kind === 'move' ? 'move_link' : editor.id ? 'update_link' : 'create_link', {
         ...(editor.id ? { id: editor.id } : {}), folder_id: editor.folder_id, title: editor.title.trim(), content: editor.content, url: safeWebUrl(editor.url) ?? '', image_url: safeWebUrl(editor.image_url) ?? '',
-      }, editor.kind === 'move' ? '링크를 이동했어요.' : '링크를 저장했어요.')
+      }, editor.kind === 'move' ? '링크를 이동했어요.' : editor.id ? '링크를 수정했어요.' : '링크를 추가했어요.')
     }
   }
 

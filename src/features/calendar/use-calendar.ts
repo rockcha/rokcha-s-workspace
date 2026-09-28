@@ -42,13 +42,13 @@ export function useCalendar(token: string) {
     const entry = { ...draft, title: draft.type === 'note' ? '' : draft.title.trim(), time: draft.type === 'note' ? '' : draft.time, id: id ?? crypto.randomUUID(), revision: entries.find(item => item.id === id)?.revision ?? 0 }
     const error = await collection.mutate('save', entry)
     if (error) toast.error(error, { id: 'calendar-mutation' })
-    else toast.success('저장했어요.', { id: 'calendar-mutation' })
+    else toast.success(`${draft.type === 'note' ? '노트를' : '일정을'} ${id ? '수정' : '추가'}했어요.`, { id: 'calendar-mutation' })
     return !error
   }
   async function remove(id: string) {
     const error = await collection.mutate('delete', { id, revision: entries.find(item => item.id === id)?.revision })
     if (error) toast.error(error, { id: 'calendar-mutation' })
-    else toast.success('삭제했어요.', { id: 'calendar-mutation' })
+    else toast.success(`${entries.find(item => item.id === id)?.type === 'note' ? '노트를' : '일정을'} 삭제했어요.`, { id: 'calendar-mutation' })
     return !error
   }
   return { ...collection, entries, save, remove }

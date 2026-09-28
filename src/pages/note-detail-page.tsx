@@ -61,7 +61,7 @@ export function NoteDetailPage({ token, noteId, folderId }: { token: string; not
     setError('')
     try {
       await requestNotes(token, isNew ? 'create_note' : 'update_note', { ...draft, title: draft.title.trim(), ...(!isNew ? { id: noteId } : {}) })
-      toast.success('메모를 저장했어요.', { id: 'notes-mutation' })
+      toast.success(isNew ? '메모를 추가했어요.' : '메모를 수정했어요.', { id: 'notes-mutation' })
       goBack(draft.folder_id)
     } catch {
       setError('저장하지 못했어요. 입력한 내용은 유지돼요. 연결 상태를 확인하고 다시 시도해 주세요.')

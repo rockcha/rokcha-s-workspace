@@ -1,5 +1,9 @@
 import { PageHeader } from '@/components/layout/page-header'
+import { useState } from 'react'
+import { Tabs } from 'radix-ui'
 import { CalendarDays, CalendarClock } from 'lucide-react'
+import { TodoList } from '@/features/todos/todo-list'
+import type { TodosState } from '@/features/todos/use-todos'
 import { Button } from '@/components/ui/button'
 import { WorkspaceMemo } from '@/features/workspace-memo/workspace-memo'
 import type { WorkspaceMemoState } from '@/features/workspace-memo/use-workspace-memo'
@@ -7,11 +11,12 @@ import { daysUntil, sortEntries, useToday } from '@/features/calendar/use-calend
 import type { CalendarState } from '@/features/calendar/use-calendar'
 
 const sections = [
-  { id: 'today', title: '오늘 일정', icon: CalendarDays, message: '오늘 등록된 일정과 노트가 없어요.', href: '#/calendar', linkLabel: '캘린더 보기' },
-  { id: 'upcoming', title: '다가오는 일정', icon: CalendarClock, message: '다가오는 일정이 없어요. 새로운 일정을 남겨 보세요.', href: '#/calendar', linkLabel: '캘린더 보기' },
+  { id: 'today', title: '오늘 일정', icon: CalendarDays, message: '오늘 등록된 일정과 노트가 없어요.' },
+  { id: 'upcoming', title: '다가오는 일정', icon: CalendarClock, message: '다가오는 일정이 없어요. 새로운 일정을 남겨 보세요.' },
 ] as const
 
-export function WorkspacePage({ memo, calendar }: { memo: WorkspaceMemoState; calendar: CalendarState }) {
+export function WorkspacePage({ memo, calendar, todos }: { memo: WorkspaceMemoState; calendar: CalendarState; todos: TodosState }) {
+  const [view, setView] = useState('today')
   const today = useToday()
   const sorted = sortEntries(calendar.entries)
   const entries = { today: sorted.filter(entry => entry.date === today && entry.type === 'event'), upcoming: sorted.filter(entry => entry.type === 'event' && entry.date > today) }
@@ -23,13 +28,17 @@ export function WorkspacePage({ memo, calendar }: { memo: WorkspaceMemoState; ca
       {calendar.loading && <p role="status" className="mt-4 text-sm text-muted-foreground">기록을 불러오는 중…</p>}
       <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="grid min-w-0 gap-5">
-        {sections.map(({ id, title, icon: Icon, message, href, linkLabel }) => (
-          <section key={id} aria-labelledby={`${id}-title`} className="flex h-80 min-h-0 flex-col rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
-            <div className="flex shrink-0 items-center gap-2">
-              <Icon className="size-5 text-primary" strokeWidth={1.5} aria-hidden="true" />
-              <h2 id={`${id}-title`} className="whitespace-nowrap text-base sm:text-lg">{title}</h2>
-              <Button asChild variant="outline" size="sm" className="ml-auto shrink-0 px-2 text-xs"><a href={id === 'today' ? `#/calendar/${today}` : href}>{id === 'today' ? '오늘 상세 보기' : linkLabel}</a></Button>
-            </div>
+        <Tabs.Root value={view} onValueChange={setView}>
+        <section aria-label={view === 'today' ? '오늘 일정' : '다가오는 일정'} className="flex h-80 min-h-0 flex-col rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+            <Tabs.List aria-label="일정 보기" className="flex rounded-xl bg-secondary/60 p-1">
+              {sections.map(({ id, title, icon: Icon }) => <Tabs.Trigger key={id} value={id} className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-2 text-xs text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm sm:px-3 sm:text-sm"><Icon aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.5} />{title}</Tabs.Trigger>)}
+            </Tabs.List>
+            <Button asChild variant="outline" size="sm" className="ml-auto shrink-0 px-2 text-xs"><a href={view === 'today' ? `#/calendar/${today}` : '#/calendar'}>{view === 'today' ? '오늘 상세 보기' : '캘린더 보기'}</a></Button>
+          </div>
+        {sections.map(({ id, title, message }) => (
+          <Tabs.Content key={id} value={id} className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden focus-visible:outline-2 focus-visible:outline-ring motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200">
+            <h2 className="sr-only">{title}</h2>
             {id === 'today' ? <div className="mt-4 grid min-h-0 flex-1 grid-cols-2 gap-3 sm:gap-5">
               <div className="flex min-h-0 min-w-0 flex-col gap-2">
                 <h3 className="text-xs text-muted-foreground">일정</h3>
@@ -50,8 +59,11 @@ export function WorkspacePage({ memo, calendar }: { memo: WorkspaceMemoState; ca
               <span className="shrink-0 rounded-md bg-card px-2 py-1 text-xs text-primary">D-{daysUntil(entry.date, today)}</span>
               <div className="min-w-0"><p className="break-words text-sm">{entry.title}</p></div>
             </li>)}</ul> : <p className="py-10 text-sm leading-7 text-muted-foreground">{message}</p>}
-          </section>
+          </Tabs.Content>
         ))}
+        </section>
+        </Tabs.Root>
+        <TodoList todos={todos} />
         </div>
         <WorkspaceMemo memo={memo} />
       </div>

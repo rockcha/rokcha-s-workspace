@@ -31,7 +31,7 @@ export function useTimetable(token: string) {
     const lesson = { ...draft, name: draft.name.trim(), days: [...new Set(draft.days)].sort(), id: id ?? crypto.randomUUID(), revision: lessons.find(item => item.id === id)?.revision ?? 0 }
     if (!validLesson(lesson)) return '수업 이름과 요일을 입력하고 종료 시간을 시작 시간보다 늦게 지정해 주세요.'
     const error = await collection.mutate('save', lesson)
-    if (!error) toast.success('수업을 저장했어요.', { id: 'timetable-mutation' })
+    if (!error) toast.success(id ? '수업을 수정했어요.' : '수업을 추가했어요.', { id: 'timetable-mutation' })
     return error
   }
   async function remove(id: string) {

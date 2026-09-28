@@ -64,7 +64,7 @@ export function MaterialsPage({ token }: { token: string }) {
     try {
       const result = await requestMaterials(token, action, action === 'save' ? { ...draft!, title: draft!.title.trim() } : { id: removal!.drive_id })
       setFiles(result.files); setFolders(result.folders); nextDraft(); setRemoval(null)
-      toast.success(action === 'save' ? '저장됨.' : '자료실에서 제거했어요.', { id: 'materials-mutation' })
+      toast.success(action === 'delete' ? '자료실에서 자료를 제거했어요.' : files.some(file => file.drive_id === draft?.id) ? '자료를 수정했어요.' : '자료를 추가했어요.', { id: 'materials-mutation' })
     } catch { setError('저장하지 못했어요. 선택한 자료는 유지했으니 다시 시도해 주세요.') }
     finally { pending.current = false; setBusy(false) }
   }
@@ -76,7 +76,7 @@ export function MaterialsPage({ token }: { token: string }) {
       setFiles(result.files); setFolders(result.folders)
       if (!result.folders.some(folder => folder.id === folderId)) setFolderId('')
       setFolderEditor(null); setFolderRemoval(null)
-      toast.success(remove ? '폴더를 삭제했어요. 자료는 최상위로 옮겼어요.' : '저장됨.', { id: 'materials-mutation' })
+      toast.success(remove ? '폴더를 삭제했어요. 자료는 최상위로 옮겼어요.' : folderEditor?.id ? '폴더 이름을 변경했어요.' : '폴더를 추가했어요.', { id: 'materials-mutation' })
     } catch { setError('폴더를 저장하지 못했어요. 다시 시도해 주세요.') }
     finally { pending.current = false; setBusy(false) }
   }
