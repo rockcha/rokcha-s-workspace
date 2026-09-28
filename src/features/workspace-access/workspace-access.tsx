@@ -123,7 +123,6 @@ export function WorkspaceAccess({ children }: { children: (leave: () => Promise<
             <Button type="submit" disabled={busy || !code || !workspaceApi.configured} className="mt-5 h-12 w-full rounded-lg">{busy ? '확인하는 중…' : '작업실 들어가기'}{busy ? <LoaderCircle className="motion-safe:animate-spin" aria-hidden="true" /> : <ArrowRight aria-hidden="true" />}</Button>
           </form>
         )}
-        <p className="mt-10 text-xs text-muted-foreground">조금씩, 차곡차곡. 나만의 속도로.</p>
       </section>
     </main>
   )

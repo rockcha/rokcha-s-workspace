@@ -9,7 +9,7 @@ export function createWorkspaceApi(url: string, key: string) {
   } catch { /* Missing or unsafe configuration keeps the workspace locked. */ }
 
   async function rpc(name: string, body: Record<string, unknown>, token?: string): Promise<unknown> {
-    if (!configured) throw new Error('Supabase 연결 설정을 확인해 주세요.')
+    if (!configured) throw new Error('작업실 연결 설정을 확인해 주세요.')
     const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json' }
     if (key.startsWith('eyJ')) headers.Authorization = `Bearer ${key}`
     if (token) headers['x-workspace-session'] = token
@@ -22,7 +22,7 @@ export function createWorkspaceApi(url: string, key: string) {
     } catch {
       throw new Error('연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.')
     }
-    if (!response.ok) throw new Error('작업실에 연결하지 못했어요. Supabase 설정과 SQL 실행 여부를 확인해 주세요.')
+    if (!response.ok) throw new Error('작업실에 연결하지 못했어요. 연결 설정을 확인해 주세요.')
     return response.json()
   }
 

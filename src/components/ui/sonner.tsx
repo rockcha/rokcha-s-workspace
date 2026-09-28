@@ -8,7 +8,6 @@ export function Toaster(props: ToasterProps) {
       theme="light"
       position="bottom-right"
       closeButton
-      richColors
       containerAriaLabel="알림"
       icons={{
         success: <CircleCheck className="size-4" />,
@@ -18,9 +17,6 @@ export function Toaster(props: ToasterProps) {
         loading: <LoaderCircle className="size-4 animate-spin" />,
       }}
       style={{
-        '--normal-bg': 'var(--popover)',
-        '--normal-text': 'var(--popover-foreground)',
-        '--normal-border': 'var(--border)',
         '--border-radius': 'var(--radius)',
         fontFamily: 'var(--font-sans)',
       } as CSSProperties}

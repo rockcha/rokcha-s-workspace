@@ -1,45 +1,61 @@
-﻿import { useState } from 'react'
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
+import { PageHeader } from '@/components/layout/page-header'
+import { useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { EntryEditor } from '@/features/calendar/entry-editor'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { dateKey, sortEntries, useToday } from '@/features/calendar/use-calendar'
+import type { CalendarState } from '@/features/calendar/use-calendar'
 
-const weekdays = ['일', '월', '화', '수', '목', '금', '토']
+const weekdays = ['월', '화', '수', '목', '금', '토', '일']
 
-export function CalendarPage() {
-  const today = new Date()
-  const [month, setMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
+export function CalendarPage({ calendar, monthKey }: { calendar: CalendarState; monthKey?: string }) {
+  const todayKey = useToday()
+  const [adding, setAdding] = useState(false)
+  const addButton = useRef<HTMLButtonElement>(null)
+  const month = new Date(`${monthKey ?? todayKey.slice(0, 7)}-01T12:00:00`)
   const year = month.getFullYear()
   const monthIndex = month.getMonth()
-  const offset = month.getDay()
+  const offset = (month.getDay() + 6) % 7
   const days = new Date(year, monthIndex + 1, 0).getDate()
   const cells = Math.ceil((offset + days) / 7) * 7
   return (
     <section aria-labelledby="calendar-title">
-      <p className="text-xs tracking-widest text-primary">나의 하루</p>
-      <h1 id="calendar-title" className="mt-3 text-3xl tracking-tight">캘린더</h1>
-      <p className="mt-3 text-sm text-muted-foreground">여유롭게 살펴보는 이번 달의 흐름.</p>
-      <div className="mt-10 overflow-hidden rounded-xl border bg-card">
+      <PageHeader className="pb-0"><div className="flex flex-wrap items-center justify-between gap-4"><h1 id="calendar-title" className="flex items-center gap-3 text-3xl tracking-tight"><span aria-hidden="true" className="shrink-0 text-2xl">📅</span>캘린더</h1><Button ref={addButton} disabled={calendar.loading || calendar.busy || Boolean(calendar.error)} onClick={() => setAdding(true)}><Plus aria-hidden="true" />일정 추가</Button></div>
+      {calendar.error && <p role="alert" className="mt-4 text-sm text-destructive">{calendar.error} <Button variant="outline" size="sm" onClick={calendar.retry}>다시 불러오기</Button></p>}
+      {calendar.loading && <p role="status" className="mt-4 text-sm text-muted-foreground">기록을 불러오는 중…</p>}
+      <div className="mt-6 overflow-hidden rounded-t-xl border bg-card">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-5 sm:px-6">
           <h2 aria-live="polite" className="text-lg">{year}년 {monthIndex + 1}월</h2>
           <div className="flex items-center gap-1">
-            <Button type="button" variant="ghost" size="icon" aria-label="이전 달" onClick={() => setMonth(new Date(year, monthIndex - 1, 1))}><ChevronLeft aria-hidden="true" /></Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => setMonth(new Date(today.getFullYear(), today.getMonth(), 1))}>오늘</Button>
-            <Button type="button" variant="ghost" size="icon" aria-label="다음 달" onClick={() => setMonth(new Date(year, monthIndex + 1, 1))}><ChevronRight aria-hidden="true" /></Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="이전 달" onClick={() => { window.location.hash = `/calendar?month=${dateKey(new Date(year, monthIndex - 1, 1)).slice(0, 7)}` }}><ChevronLeft aria-hidden="true" /></Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => { window.location.hash = '/calendar' }}>오늘</Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="다음 달" onClick={() => { window.location.hash = `/calendar?month=${dateKey(new Date(year, monthIndex + 1, 1)).slice(0, 7)}` }}><ChevronRight aria-hidden="true" /></Button>
           </div>
         </div>
+        <div aria-hidden="true" data-slot="calendar-weekdays" className="grid grid-cols-7">{weekdays.map(day => <div key={day} className="flex h-11 items-center justify-center text-xs text-muted-foreground">{day}</div>)}</div>
+      </div>
+      </PageHeader>
+      <div className="overflow-hidden rounded-b-xl border border-t-0 bg-card">
         <table className="w-full table-fixed border-collapse text-sm" aria-label={`${year}년 ${monthIndex + 1}월 달력`}>
-          <thead><tr>{weekdays.map(day => <th key={day} scope="col" className="h-11 border-b text-xs font-normal text-muted-foreground">{day}</th>)}</tr></thead>
+          <thead className="sr-only"><tr>{weekdays.map(day => <th key={day} scope="col">{day}</th>)}</tr></thead>
           <tbody>{Array.from({ length: cells / 7 }, (_, row) => <tr key={row}>{Array.from({ length: 7 }, (_, column) => {
             const date = new Date(year, monthIndex, row * 7 + column - offset + 1)
-            const isToday = date.toDateString() === today.toDateString()
-            return <td key={column} className="h-16 border-r border-b p-1 align-top last:border-r-0 sm:h-24 sm:p-3 lg:h-28">
-              <time dateTime={`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`} aria-current={isToday ? 'date' : undefined} className={cn('flex size-8 items-center justify-center rounded-full', date.getMonth() !== monthIndex && 'text-muted-foreground/45', isToday && 'bg-primary text-primary-foreground')}>{date.getDate()}</time>
+            const isToday = dateKey(date) === todayKey
+            const key = dateKey(date)
+            const entries = sortEntries(calendar.entries.filter(entry => entry.date === key && entry.type === 'event'))
+            return <td key={column} className="border-r border-b p-0.5 align-top last:border-r-0 sm:p-1">
+              <a href={`#/calendar/${key}`} aria-label={`${key} 상세 보기`} className="block h-28 overflow-hidden rounded-md p-0.5 text-left hover:bg-secondary/60 focus-visible:outline-2 focus-visible:outline-ring sm:h-32 sm:p-1">
+                <time dateTime={key} aria-current={isToday ? 'date' : undefined} className={cn('flex size-7 items-center justify-center rounded-full', date.getMonth() !== monthIndex && 'text-muted-foreground/45', isToday && 'bg-primary text-primary-foreground')}>{date.getDate()}</time>
+                {entries.slice(0, 2).map(entry => <span key={entry.id} className={cn('mt-1 block truncate rounded px-1 py-1 text-[10px] sm:text-xs', entry.type === 'event' ? 'bg-secondary text-secondary-foreground' : 'border border-dashed text-muted-foreground')}><span className="hidden sm:inline">{entry.type === 'note' ? '노트 · ' : entry.time ? `${entry.time} ` : ''}</span>{entry.title}</span>)}
+                {entries.length > 2 && <span className="block text-[10px] text-muted-foreground">+{entries.length - 2}개</span>}
+              </a>
             </td>
           })}</tr>)}</tbody>
         </table>
-        <div className="flex items-center gap-2 px-5 py-4 text-xs text-muted-foreground"><span className="size-2 rounded-full bg-primary" />오늘</div>
+        <div className="flex flex-wrap items-center gap-4 px-5 py-4 text-xs text-muted-foreground"><span>● 오늘</span><span>일정 · 시간 또는 종일</span><span>노트 · 날짜별 기록</span></div>
       </div>
-      <div className="mt-6 flex items-center gap-3 rounded-xl border border-dashed px-5 py-5 text-sm text-muted-foreground"><CalendarDays className="size-5 shrink-0" strokeWidth={1.5} aria-hidden="true" />아직 등록된 일정이 없어요. 잠시 쉬어 가도 좋은 하루예요.</div>
+      {adding && <EntryEditor date={monthKey && monthKey !== todayKey.slice(0, 7) ? `${monthKey}-01` : todayKey} calendar={calendar} onClose={() => setAdding(false)} onCloseAutoFocus={() => addButton.current?.focus()} />}
     </section>
   )
 }

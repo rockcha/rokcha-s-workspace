@@ -4,7 +4,7 @@ import { PGlite } from '@electric-sql/pglite'
 export const testToken = 'a'.repeat(64)
 export const notesSql = await readFile(new URL('../../supabase/notes.sql', import.meta.url), 'utf8')
 
-export async function createNotesDatabase() {
+export async function createNotesDatabase(schema = notesSql) {
   const db = new PGlite()
   // Only session validation is stubbed. Tables, RLS, constraints and RPC are real SQL.
   await db.exec(`
@@ -18,7 +18,7 @@ export async function createNotesDatabase() {
     revoke all on function public.workspace_session_valid() from public;
     grant execute on function public.workspace_session_valid() to anon;
   `)
-  await db.exec(notesSql)
+  await db.exec(schema)
   await db.exec('set role anon')
   await db.query("select set_config('request.headers', $1, false)", [JSON.stringify({ 'x-workspace-session': testToken })])
   return db

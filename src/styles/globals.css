@@ -63,6 +63,28 @@
   --border: #dfe6dc;
   --input: #dfe6dc;
   --ring: #426849;
+  --lesson-sage-bg: #e8f1e5;
+  --lesson-sage-fg: #34543a;
+  --lesson-blue-bg: #e7f0fb;
+  --lesson-blue-fg: #35597d;
+  --lesson-lavender-bg: #efeafa;
+  --lesson-lavender-fg: #655084;
+  --lesson-rose-bg: #f9e9ee;
+  --lesson-rose-fg: #88465d;
+  --lesson-amber-bg: #faf0dc;
+  --lesson-amber-fg: #805c24;
+  --lesson-teal-bg: #e2f2ee;
+  --lesson-teal-fg: #31675c;
+  --lesson-lemon-bg: #f8f5cc;
+  --lesson-lemon-fg: #6b621d;
+  --lesson-coral-bg: #fbe4dc;
+  --lesson-coral-fg: #924c38;
+  --lesson-indigo-bg: #e4e8fa;
+  --lesson-indigo-fg: #454d88;
+  --lesson-cocoa-bg: #eee3db;
+  --lesson-cocoa-fg: #70503b;
+  --lesson-slate-bg: #e8ecef;
+  --lesson-slate-fg: #4c5b68;
   --chart-1: #426849;
   --chart-2: #50868a;
   --chart-3: #a77a36;
@@ -84,3 +106,16 @@
   button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: pointer; }
   ::selection { background: var(--accent); color: var(--accent-foreground); }
 }
+
+.lesson-color { background: var(--lesson-bg); color: var(--lesson-fg); border-color: var(--lesson-fg); }
+.lesson-color[data-color="lemon"] { --lesson-bg: var(--lesson-lemon-bg); --lesson-fg: var(--lesson-lemon-fg); }
+.lesson-color[data-color="coral"] { --lesson-bg: var(--lesson-coral-bg); --lesson-fg: var(--lesson-coral-fg); }
+.lesson-color[data-color="indigo"] { --lesson-bg: var(--lesson-indigo-bg); --lesson-fg: var(--lesson-indigo-fg); }
+.lesson-color[data-color="cocoa"] { --lesson-bg: var(--lesson-cocoa-bg); --lesson-fg: var(--lesson-cocoa-fg); }
+.lesson-color[data-color="slate"] { --lesson-bg: var(--lesson-slate-bg); --lesson-fg: var(--lesson-slate-fg); }
+.lesson-color[data-color="sage"] { --lesson-bg: var(--lesson-sage-bg); --lesson-fg: var(--lesson-sage-fg); }
+.lesson-color[data-color="blue"] { --lesson-bg: var(--lesson-blue-bg); --lesson-fg: var(--lesson-blue-fg); }
+.lesson-color[data-color="lavender"] { --lesson-bg: var(--lesson-lavender-bg); --lesson-fg: var(--lesson-lavender-fg); }
+.lesson-color[data-color="rose"] { --lesson-bg: var(--lesson-rose-bg); --lesson-fg: var(--lesson-rose-fg); }
+.lesson-color[data-color="amber"] { --lesson-bg: var(--lesson-amber-bg); --lesson-fg: var(--lesson-amber-fg); }
+.lesson-color[data-color="teal"] { --lesson-bg: var(--lesson-teal-bg); --lesson-fg: var(--lesson-teal-fg); }

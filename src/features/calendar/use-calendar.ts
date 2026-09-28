@@ -1,0 +1,62 @@
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { useCollection } from '@/features/workspace-data/use-collection'
+
+export type CalendarEntry = { id: string; revision?: number; type: 'event' | 'note'; date: string; time: string; title: string; content: string }
+export type CalendarDraft = Omit<CalendarEntry, 'id' | 'revision'>
+
+export function dateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+export function daysUntil(date: string, today: string) {
+  return Math.round((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000)
+}
+
+export function validDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
+}
+
+export function validEntry(value: unknown): value is CalendarEntry {
+  if (!value || typeof value !== 'object') return false
+  const entry = value as CalendarEntry
+  return typeof entry.id === 'string' && (entry.type === 'event' || entry.type === 'note') && typeof entry.date === 'string' && validDate(entry.date) && typeof entry.time === 'string' && (entry.time === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(entry.time)) && typeof entry.title === 'string' && typeof entry.content === 'string'
+}
+
+export function useToday() {
+  const [today, setToday] = useState(() => dateKey(new Date()))
+  useEffect(() => {
+    const refresh = () => setToday(dateKey(new Date()))
+    const interval = window.setInterval(refresh, 30000)
+    window.addEventListener('focus', refresh)
+    return () => { clearInterval(interval); window.removeEventListener('focus', refresh) }
+  }, [])
+  return today
+}
+
+export function useCalendar(token: string) {
+  const collection = useCollection(token, 'calendar', validEntry)
+  const entries = collection.items
+  async function save(draft: CalendarDraft, id?: string) {
+    if (!(draft.type === 'note' ? draft.content : draft.title).trim() || !validDate(draft.date)) return false
+    const entry = { ...draft, title: draft.type === 'note' ? '' : draft.title.trim(), time: draft.type === 'note' ? '' : draft.time, id: id ?? crypto.randomUUID(), revision: entries.find(item => item.id === id)?.revision ?? 0 }
+    const error = await collection.mutate('save', entry)
+    if (error) toast.error(error, { id: 'calendar-mutation' })
+    else toast.success('저장했어요.', { id: 'calendar-mutation' })
+    return !error
+  }
+  async function remove(id: string) {
+    const error = await collection.mutate('delete', { id, revision: entries.find(item => item.id === id)?.revision })
+    if (error) toast.error(error, { id: 'calendar-mutation' })
+    else toast.success('삭제했어요.', { id: 'calendar-mutation' })
+    return !error
+  }
+  return { ...collection, entries, save, remove }
+}
+
+export type CalendarState = ReturnType<typeof useCalendar>
+
+export function sortEntries(entries: CalendarEntry[]) {
+  const order = (entry: CalendarEntry) => entry.type === 'note' ? '99:99' : entry.time || '24:00'
+  return [...entries].sort((a, b) => a.date.localeCompare(b.date) || order(a).localeCompare(order(b)) || a.title.localeCompare(b.title, 'ko'))
+}

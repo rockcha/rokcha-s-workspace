@@ -6,6 +6,7 @@ import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
   { ignores: ['dist', '.tools', 'node_modules', 'test-results', 'playwright-report'] },
+  { files: ['supabase/functions/**/index.ts'], languageOptions: { globals: { Deno: 'readonly' } } },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

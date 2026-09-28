@@ -37,6 +37,38 @@ create policy workspace_access on public.notes for all to anon
   using ((select public.workspace_session_valid()))
   with check ((select public.workspace_session_valid()));
 
+
+-- 상위 폴더 직접 수정 권한은 열지 않고, 검증된 이동 함수만 허용합니다.
+create or replace function public.move_note_folder(folder_id uuid, destination_id uuid)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  if not public.workspace_session_valid() then
+    raise exception 'Workspace session expired' using errcode = '42501';
+  end if;
+  -- 동시 이동과 삭제를 직렬화해 서로를 부모로 삼는 경쟁 조건을 방지합니다.
+  lock table public.note_folders in share row exclusive mode;
+  if not exists (select 1 from public.note_folders where id = folder_id) then
+    raise exception 'Folder no longer exists' using errcode = 'P0002';
+  end if;
+  if destination_id is not null and not exists (select 1 from public.note_folders where id = destination_id) then
+    raise exception 'Destination no longer exists' using errcode = 'P0002';
+  end if;
+  if exists (
+    with recursive descendants as (
+      select id from public.note_folders where id = folder_id
+      union
+      select f.id from public.note_folders f join descendants d on f.parent_id = d.id
+    )
+    select 1 from descendants where id = destination_id
+  ) then
+    raise exception 'Cannot move folder into itself or a descendant' using errcode = '22023';
+  end if;
+  update public.note_folders set parent_id = destination_id where id = folder_id;
+end;
+$$;
+revoke all on function public.move_note_folder(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.move_note_folder(uuid, uuid) to anon;
+
 -- 한 요청 안에서 저장과 목록 조회를 처리합니다. 호출자의 RLS 권한을 유지합니다.
 create or replace function public.manage_notes(action text, payload jsonb default '{}'::jsonb)
 returns jsonb language plpgsql security invoker set search_path = '' as $$
@@ -51,6 +83,8 @@ begin
     when 'create_folder' then
       insert into public.note_folders(name, parent_id)
       values (btrim(payload->>'name'), nullif(payload->>'parent_id', '')::uuid);
+    when 'move_folder' then
+      perform public.move_note_folder((payload->>'id')::uuid, nullif(payload->>'parent_id', '')::uuid);
     when 'rename_folder' then
       update public.note_folders set name = btrim(payload->>'name') where id = (payload->>'id')::uuid;
     when 'delete_folder' then
