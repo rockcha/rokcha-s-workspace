@@ -22,7 +22,7 @@ export function LinkCard({ link, onEdit, onMove, onDelete }: { link: SavedLink; 
         <div className="flex shrink-0">
           <Button type="button" variant="ghost" size="icon" className="size-8" aria-label={link.title + ' 수정'} onClick={onEdit}><Pencil aria-hidden="true" /></Button>
           <Button type="button" variant="ghost" size="icon" className="size-8" aria-label={link.title + ' 폴더 이동'} onClick={onMove}><FolderInput aria-hidden="true" /></Button>
-          <Button type="button" variant="ghost" size="icon" className="size-8" aria-label={link.title + ' 삭제'} onClick={onDelete}><Trash2 aria-hidden="true" /></Button>
+          <Button type="button" variant="destructive-ghost" size="icon" className="size-8" aria-label={link.title + ' 삭제'} onClick={onDelete}><Trash2 aria-hidden="true" /></Button>
         </div>
       </div>
     </li>

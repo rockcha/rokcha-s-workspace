@@ -108,15 +108,19 @@ create policy workspace_access on public.your_table
 
 `npm test`와 `npm run test:ui`는 실제 SQL을 PGlite에 실행해 제약·충돌·권한과 화면 동작을 확인합니다. 운영 Supabase에는 자동 적용되지 않으므로 SQL Editor 실행은 별도로 필요합니다.
 
-## 동기부여의 방 설정
 
-기존 접속 설정 후 [`supabase/motivation.sql`](../supabase/motivation.sql) 전체를 SQL Editor에서 실행하세요. 기존 콘텐츠는 재실행해도 유지됩니다. 글귀(최대 5,000자), 출처·영상 제목(120자), 유튜브 영상 ID와 메모를 저장합니다. 세션 없는 접근 및 직접 쓰기는 차단하고 수정·삭제 시 revision을 확인합니다. 운영 SQL은 로컬 검증에 포함되지 않으므로 별도 적용이 필요합니다. 유튜브 플레이어는 [공식 iframe 문서](https://developers.google.com/youtube/player_parameters)를 따릅니다.
 
 
 ## 할 일 리스트 설정
 
 기존 프로젝트도 [supabase/workspace-data.sql](../supabase/workspace-data.sql) 전체를 SQL Editor에서 다시 실행하세요. workspace_todos 테이블과 todo_list/save/delete RPC 분기가 추가되며 기존 일정·노트·시간표·메모는 유지됩니다. 할 일은 최대 200자이며 완료 상태도 서버에 저장합니다. 직접 쓰기와 세션 없는 접근을 차단하고 수정·삭제에는 revision을 검사합니다. 운영 SQL 적용은 로컬 테스트에 포함되지 않습니다.
 
+## 영단어 공부방 설정
+
+영단어 공부방은 [vocabulary.sql](../supabase/vocabulary.sql) 전체를 SQL Editor에서 한 번 실행해야 사용할 수 있습니다. 기존 접속 설정은 그대로 사용합니다. 단어(120자)와 품사별 뜻(각 1,000자, 최대 50개)을 서버에 보관하며, 세션 검증과 수정·삭제 revision 검사를 적용합니다. 재실행 시 단어는 유지됩니다. 가리기 모드는 화면에만 적용하며 저장된 단어·뜻은 변경하지 않습니다. 운영 SQL은 별도로 적용해야 합니다.
+
 ## 할 일 전체 삭제 업데이트
+
+전체 삭제가 SQL 적용 후에도 실패한다면 최신 파일로 다시 적용합니다. 삭제문은 확인한 ID·revision을 `WHERE` 조건으로 지정하며, 조건 없는 DELETE를 차단하는 서버 설정도 지원합니다. 서버 오류 안내에는 HTTP 상태와 오류 코드만 표시하고 응답 원문은 노출하지 않습니다. 로컬 PGlite 테스트에는 서버의 safeupdate 확장이 없어 해당 설정 자체는 운영 환경에서 별도로 확인해야 합니다.
 
 [workspace-data.sql](../supabase/workspace-data.sql) 전체를 SQL Editor에서 다시 실행합니다. 스크립트 적용 자체는 할 일을 삭제하지 않습니다. 추가되는 todo_delete_all은 세션과 명시적 confirmed: true, 확인창을 열 때의 전체 ID·revision 목록을 검사한 후 하나의 트랜잭션으로 삭제합니다. 목록의 추가·수정·삭제·순서 변경이 있었다면 전부 보존하고 충돌을 반환합니다. 일정·메모 등 다른 데이터는 삭제하지 않습니다.

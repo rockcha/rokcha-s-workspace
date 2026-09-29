@@ -1,13 +1,13 @@
 import { PageHeader } from '@/components/layout/page-header'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Tabs } from 'radix-ui'
-import { CalendarDays, CalendarClock } from 'lucide-react'
+import { CalendarDays, CalendarClock, Clock } from 'lucide-react'
 import { TodoList } from '@/features/todos/todo-list'
 import type { TodosState } from '@/features/todos/use-todos'
 import { Button } from '@/components/ui/button'
 import { WorkspaceMemo } from '@/features/workspace-memo/workspace-memo'
 import type { WorkspaceMemoState } from '@/features/workspace-memo/use-workspace-memo'
-import { daysUntil, sortEntries, useToday } from '@/features/calendar/use-calendar'
+import { dateKey, daysUntil, sortEntries } from '@/features/calendar/use-calendar'
 import type { CalendarState } from '@/features/calendar/use-calendar'
 
 const sections = [
@@ -17,9 +17,24 @@ const sections = [
 
 export function WorkspacePage({ memo, calendar, todos }: { memo: WorkspaceMemoState; calendar: CalendarState; todos: TodosState }) {
   const [view, setView] = useState('today')
-  const today = useToday()
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const refresh = () => setNow(Date.now())
+    const interval = window.setInterval(refresh, 30000)
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [])
+  const today = dateKey(new Date(now))
   const sorted = sortEntries(calendar.entries)
-  const entries = { today: sorted.filter(entry => entry.date === today && entry.type === 'event'), upcoming: sorted.filter(entry => entry.type === 'event' && entry.date > today) }
+  const entries = {
+    today: sorted.filter(entry => entry.date === today && entry.type === 'event'),
+    upcoming: sorted.filter(entry => entry.type === 'event' && Date.parse(`${entry.date}T${entry.time || '23:59'}`) > now),
+  }
   const todayNote = sorted.find(entry => entry.date === today && entry.type === 'note')
   return (
     <section aria-labelledby="workspace-title">
@@ -55,10 +70,13 @@ export function WorkspacePage({ memo, calendar, todos }: { memo: WorkspaceMemoSt
                   <p className="whitespace-pre-wrap break-words text-sm leading-7">{todayNote?.content || '오늘 작성한 노트가 없어요.'}</p>
                 </div>
               </div>
-            </div> : entries[id].length ? <ul tabIndex={0} aria-label={`${title} 목록`} className="my-5 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain rounded-lg focus-visible:outline-2 focus-visible:outline-ring">{entries[id].map(entry => <li key={entry.id} className="flex items-start gap-3 rounded-xl bg-secondary/40 p-3">
-              <span className="shrink-0 rounded-md bg-card px-2 py-1 text-xs text-primary">D-{daysUntil(entry.date, today)}</span>
-              <div className="min-w-0"><p className="break-words text-sm">{entry.title}</p></div>
-            </li>)}</ul> : <p className="py-10 text-sm leading-7 text-muted-foreground">{message}</p>}
+            </div> : entries[id].length ? <ul tabIndex={0} aria-label={`${title} 목록`} className="my-5 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain rounded-lg focus-visible:outline-2 focus-visible:outline-ring">{entries[id].map(entry => {
+              const remaining = remainingTime(entry.date, entry.time, now)
+              return <li key={entry.id} className="flex items-center gap-2 rounded-xl bg-secondary/40 p-3 sm:gap-3">
+              <span className="shrink-0 rounded-md bg-card px-2 py-1 text-xs text-primary">{entry.date === today ? 'D-day' : `D-${daysUntil(entry.date, today)}`}</span>
+              <p className="min-w-0 flex-1 break-words text-sm">{entry.title}</p>
+              {remaining && <p className="ml-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs text-primary"><Clock aria-hidden="true" className="size-3.5 shrink-0" /><span>{remaining}</span></p>}
+            </li>})}</ul> : <p className="py-10 text-sm leading-7 text-muted-foreground">{message}</p>}
           </Tabs.Content>
         ))}
         </section>
@@ -69,4 +87,13 @@ export function WorkspacePage({ memo, calendar, todos }: { memo: WorkspaceMemoSt
       </div>
     </section>
   )
+}
+
+function remainingTime(date: string, time: string, now: number) {
+  const remaining = Date.parse(`${date}T${time || '23:59'}`) - now
+  if (!Number.isFinite(remaining) || remaining <= 0 || remaining >= 86400000) return null
+  if (remaining < 60000) return '1분 미만 남음'
+  const minutes = Math.floor(remaining / 60000)
+  const hours = Math.floor(minutes / 60)
+  return hours ? `${hours}시간 ${minutes % 60}분 남음` : `${minutes}분 남음`
 }

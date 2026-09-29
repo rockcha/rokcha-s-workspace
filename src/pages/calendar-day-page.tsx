@@ -37,11 +37,11 @@ export function CalendarDayPage({ date, calendar }: { date: string; calendar: Ca
       {events.length ? <ul className="mt-5 divide-y">{events.map(entry => <li key={entry.id} className="flex flex-wrap items-start gap-3 py-4">
         <span className="rounded-lg bg-secondary px-3 py-1.5 text-sm text-primary">{entry.time || '종일'}</span>
         <div className="min-w-0 flex-1"><h3 className="break-words">{entry.title}</h3>{entry.content && <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">{entry.content}</p>}</div>
-        <Button type="button" variant="outline" size="sm" aria-label={`${entry.title} 수정·삭제`} onClick={() => edit('event', entry)}>수정·삭제</Button>
+        <Button type="button" variant="ghost" size="sm" aria-label={`${entry.title} 수정·삭제`} onClick={() => edit('event', entry)}>수정·삭제</Button>
       </li>)}</ul> : <p className="py-10 text-sm text-muted-foreground">아직 일정이 없어요. 이 날짜에 여러 일정을 추가할 수 있어요.</p>}
     </section>
     <section aria-labelledby="day-note" className="flex min-w-0 flex-col rounded-2xl border bg-card p-5 shadow-sm sm:p-6 lg:min-h-80">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="day-note" className="flex items-center gap-2 whitespace-nowrap text-lg"><NotebookPen aria-hidden="true" className="size-5 text-primary" />오늘의 노트</h2><Button type="button" variant="outline" size="sm" disabled={calendar.loading || calendar.busy || !!calendar.error} onClick={() => edit('note', note)}>{note ? '노트 수정·삭제' : '노트 추가'}</Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="day-note" className="flex items-center gap-2 whitespace-nowrap text-lg"><NotebookPen aria-hidden="true" className="size-5 text-primary" />오늘의 노트</h2><Button type="button" variant={note ? "ghost" : "outline"} size="sm" disabled={calendar.loading || calendar.busy || !!calendar.error} onClick={() => edit('note', note)}>{note ? '노트 수정·삭제' : '노트 추가'}</Button></div>
       {note ? <div className="mt-5 flex-1 rounded-xl bg-secondary/50 p-4"><p className="whitespace-pre-wrap break-words text-sm leading-7">{note.content}</p></div> : <p className="py-10 text-sm text-muted-foreground">휴강 안내처럼 이 날짜에 확인할 내용을 적어 두세요.</p>}
     </section>
     </div>

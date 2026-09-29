@@ -28,9 +28,12 @@ export function EntryEditor({ date, entry, type = 'event', calendar, onClose, on
         <label className="grid gap-2 text-sm">{isNote ? '내용' : '내용 (선택)'}<Textarea aria-label={isNote ? '내용' : '내용 (선택)'} autoFocus={isNote} required={isNote} className={isNote ? 'max-h-80 min-h-48' : 'max-h-48 min-h-28'} maxLength={Math.max(10000, entry?.content.length ?? 0)} value={draft.content} onChange={event => setDraft({ ...draft, content: event.target.value })} placeholder={isNote ? '예: 이날은 수업 없음' : '조금 더 자세히 적어 두세요.'} /></label>
         {calendar.error && <p role="alert" className="text-sm text-destructive">{calendar.error}</p>}
         {isNote && noteExists && <p role="alert" className="text-sm text-muted-foreground">이 날짜에는 이미 노트가 있어요. 노트는 하루에 하나만 작성할 수 있어요.</p>}
-        {confirmDelete && <div className="rounded-lg border p-3 text-sm"><p>이 항목을 삭제할까요? 삭제하면 되돌릴 수 없어요.</p><div className="mt-3 flex gap-2"><Button type="button" variant="destructive" size="sm" onClick={async () => { if (entry && await calendar.remove(entry.id)) onClose() }}>삭제 확인</Button><Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>돌아가기</Button></div></div>}
+        {confirmDelete && <div className="rounded-lg border p-3 text-sm"><p>이 항목을 삭제할까요? 삭제하면 되돌릴 수 없어요.</p><div className="mt-3 flex gap-2"><Button type="button" variant="destructive-ghost" size="sm" onClick={async () => { if (entry && await calendar.remove(entry.id)) onClose() }}>삭제 확인</Button><Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>돌아가기</Button></div></div>}
         <div className="flex items-center justify-end gap-2">
-          {entry && <Button type="button" variant="ghost" className="mr-auto text-destructive" disabled={!!calendar.error} onClick={() => setConfirmDelete(true)}>삭제</Button>}
+          {entry && <Button type="button" variant="destructive-ghost" className="mr-auto" disabled={!!calendar.error} onClick={async () => {
+            if (isNote) setConfirmDelete(true)
+            else if (await calendar.remove(entry.id)) onClose()
+          }}>삭제</Button>}
           <Button type="button" variant="outline" onClick={onClose}>취소</Button>
           <Button type="submit" disabled={!!calendar.error || !(isNote ? draft.content : draft.title).trim() || (isNote && noteExists)}>저장</Button>
         </div>

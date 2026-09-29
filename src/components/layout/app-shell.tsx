@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react'
-import { CalendarDays, CloudSun, FolderOpen, House, Leaf, Link2, LogOut, Newspaper, Sparkles, StickyNote, Table2 } from 'lucide-react'
+import { CalendarDays, CloudSun, BookOpen, House, Leaf, Link2, LogOut, Newspaper, StickyNote, Table2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { siteConfig } from '@/config/site'
 import { cn } from '@/lib/utils'
@@ -10,9 +10,9 @@ const navigation = [
   { id: 'timetable', label: '수업 시간표', icon: Table2 },
   { id: 'notes', label: '메모함', icon: StickyNote },
   { id: 'links', label: '링크함', icon: Link2 },
-  { id: 'materials', label: '자료실', icon: FolderOpen },
+  { id: 'vocabulary', label: '영단어 공부방', icon: BookOpen },
   { id: 'news', label: '뉴스함', icon: Newspaper },
-  { id: 'motivation', label: '동기부여의 방', icon: Sparkles },
+
   { id: 'weather', label: '날씨', icon: CloudSun },
 ] as const
 

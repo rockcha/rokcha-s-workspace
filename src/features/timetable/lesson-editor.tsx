@@ -27,7 +27,7 @@ export function LessonEditor({ lesson, timetable, onClose, onRestoreFocus }: { l
           <fieldset><legend className="mb-2 text-sm">수업 색상</legend><div className="flex flex-wrap gap-2">{lessonColors.map(color => <button key={color.id} type="button" aria-label={`${color.name} 색상`} aria-pressed={draft.color === color.id} onClick={() => setDraft({ ...draft, color: color.id })} className="lesson-color flex size-9 items-center justify-center rounded-full border-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" data-color={color.id}>{draft.color === color.id && <Check aria-hidden="true" className="size-4" />}</button>)}</div></fieldset>
           <label className="grid gap-2 text-sm">수업 메모<Textarea aria-label="수업 메모" className="min-h-28 max-h-48" maxLength={3000} value={draft.memo} onChange={event => setDraft({ ...draft, memo: event.target.value })} placeholder="준비물이나 수업 장소를 적어 두세요." /></label>
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-          <div className="flex justify-end gap-2">{lesson && <Button type="button" variant="ghost" className="mr-auto text-destructive" onClick={() => { setError(''); setDeleting(true) }}>삭제</Button>}<Button type="button" variant="outline" onClick={onClose}>취소</Button><Button type="submit">저장</Button></div>
+          <div className="flex justify-end gap-2">{lesson && <Button type="button" variant="destructive-ghost" className="mr-auto" onClick={() => { setError(''); setDeleting(true) }}>삭제</Button>}<Button type="button" variant="outline" onClick={onClose}>취소</Button><Button type="submit">저장</Button></div>
           </fieldset>
         </form>
       </DialogContent>
@@ -37,7 +37,7 @@ export function LessonEditor({ lesson, timetable, onClose, onRestoreFocus }: { l
         <AlertDialogTitle>수업을 삭제할까요?</AlertDialogTitle>
         <AlertDialogDescription className="break-words">‘{lesson?.name}’ 수업을 선택된 모든 요일의 시간표에서 삭제해요. 되돌릴 수 없어요.</AlertDialogDescription>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <AlertDialogFooter><AlertDialogCancel disabled={timetable.busy}>취소</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={timetable.busy} onClick={async event => { event.preventDefault(); if (!lesson) return; const message = await timetable.remove(lesson.id); setError(message); if (!message) { setDeleting(false); onClose() } }}>수업 삭제</AlertDialogAction></AlertDialogFooter>
+        <AlertDialogFooter><AlertDialogCancel disabled={timetable.busy}>취소</AlertDialogCancel><AlertDialogAction variant="destructive-ghost" disabled={timetable.busy} onClick={async event => { event.preventDefault(); if (!lesson) return; const message = await timetable.remove(lesson.id); setError(message); if (!message) { setDeleting(false); onClose() } }}>수업 삭제</AlertDialogAction></AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   </>

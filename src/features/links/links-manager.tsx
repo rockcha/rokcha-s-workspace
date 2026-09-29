@@ -170,7 +170,7 @@ export function LinksManager({ token }: { token: string }) {
       </PageHeader>
       {loading ? <p role="status" className="py-16 text-center text-sm text-muted-foreground">링크함을 불러오고 있어요.</p> : loadError ? <div role="alert" className="py-12 text-center"><p className="text-sm text-destructive">{loadError}</p><Button type="button" variant="outline" className="mt-4" onClick={() => setRetry(value => value + 1)}>다시 시도</Button></div> : !data.folders.length ? <div className="py-20 text-center"><span className="text-3xl" aria-hidden="true">📁</span><h2 className="mt-4 text-lg">첫 폴더를 만들어 보세요</h2><p className="mt-2 text-sm text-muted-foreground">폴더를 만든 뒤 그 안에 링크를 담을 수 있어요.</p><Button type="button" variant="outline" className="mt-5" onClick={() => openFolder()}>폴더 추가</Button></div> : (
         <div className="mt-5 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {visibleFolders.map(folder => (
             <section key={folder.id} className="min-w-0 overflow-hidden rounded-xl border bg-card" aria-labelledby={`folder-title-${folder.id}`}>
               <div className="flex flex-col items-stretch gap-2 p-3">
@@ -180,8 +180,8 @@ export function LinksManager({ token }: { token: string }) {
                 <div className="flex shrink-0 justify-end">
                   <Button type="button" variant="ghost" size="icon" className="size-8 sm:size-10" aria-label={`${folder.name}에 링크 추가`} onClick={() => openSavedLink(undefined, 'link', folder.id)}><Plus aria-hidden="true" /></Button>
                   <Button type="button" variant="ghost" size="icon" className="size-8 sm:size-10" aria-label={`${folder.name} 폴더 이동`} onClick={() => { rememberFocus(); setEditor({ ...emptyEditor, kind: 'move-folder', id: folder.id, parent_id: folder.parent_id ?? '' }) }}><FolderInput className="text-muted-foreground" aria-hidden="true" /></Button>
-                  <Button type="button" variant="ghost" size="icon" className="size-8 sm:size-10" aria-label={`${folder.name} 이름 수정`} onClick={() => openFolder(folder)}><Pencil className="text-muted-foreground" aria-hidden="true" /></Button>
-                  <Button type="button" variant="ghost" size="icon" className="size-8 sm:size-10" aria-label={`${folder.name} 폴더 삭제`} onClick={() => openRemoval({ kind: 'folder', id: folder.id, name: folder.name })}><Trash2 className="text-muted-foreground" aria-hidden="true" /></Button>
+                  <Button type="button" variant="ghost" size="icon" className="size-8 sm:size-10" aria-label={`${folder.name} 이름 수정`} onClick={() => openFolder(folder)}><Pencil aria-hidden="true" /></Button>
+                  <Button type="button" variant="destructive-ghost" size="icon" className="size-8 sm:size-10" aria-label={`${folder.name} 폴더 삭제`} onClick={() => openRemoval({ kind: 'folder', id: folder.id, name: folder.name })}><Trash2 aria-hidden="true" /></Button>
                 </div>
               </div>
             </section>
@@ -216,7 +216,7 @@ export function LinksManager({ token }: { token: string }) {
         <AlertDialogContent onOverlayClick={() => { if (!pending.current) setRemoval(null) }} onCloseAutoFocus={restoreFocus} className="max-h-[85svh] overflow-y-auto">
           <AlertDialogHeader><AlertDialogTitle>{removal?.kind === 'folder' ? '폴더를 삭제할까요?' : '링크를 삭제할까요?'}</AlertDialogTitle><AlertDialogDescription className="break-words leading-7">{removal?.kind === 'folder' ? `‘${removal.name}’ 폴더와 하위 폴더 ${Math.max(0, removedFolders.size - 1)}개, 그 안의 링크 ${removedLinks}개가 모두 삭제돼요. 이 작업은 되돌릴 수 없어요.` : `‘${removal?.name}’ 링크가 삭제돼요. 이 작업은 되돌릴 수 없어요.`}</AlertDialogDescription></AlertDialogHeader>
           {formError && <p role="alert" className="text-sm leading-6 text-destructive">{formError}</p>}
-          <AlertDialogFooter><AlertDialogCancel disabled={busy}>취소</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={busy} onClick={event => { event.preventDefault(); if (removal) void mutate(removal.kind === 'folder' ? 'delete_folder' : 'delete_link', { id: removal.id }, removal.kind === 'folder' ? '폴더와 포함된 링크를 삭제했어요.' : '링크를 삭제했어요.') }}>{busy ? '삭제 중…' : removal?.kind === 'folder' ? '폴더와 링크 삭제' : '링크 삭제'}</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel disabled={busy}>취소</AlertDialogCancel><AlertDialogAction variant="destructive-ghost" disabled={busy} onClick={event => { event.preventDefault(); if (removal) void mutate(removal.kind === 'folder' ? 'delete_folder' : 'delete_link', { id: removal.id }, removal.kind === 'folder' ? '폴더와 포함된 링크를 삭제했어요.' : '링크를 삭제했어요.') }}>{busy ? '삭제 중…' : removal?.kind === 'folder' ? '폴더와 링크 삭제' : '링크 삭제'}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </section>

@@ -77,3 +77,18 @@ test('network and server failures do not authorize or report logout success', as
   t.mock.method(globalThis, 'fetch', async () => new Response('private backend details', { status: 500 }))
   await assert.rejects(api.unlock('test-code-only'), error => !error.message.includes('private backend details'))
 })
+
+test('server failures report status and valid error codes without exposing backend details', async (t) => {
+  const api = createWorkspaceApi(endpoint, key)
+  for (const code of ['21000', 'PGRST202', 'private backend details']) {
+    const mock = t.mock.method(globalThis, 'fetch', async () => Response.json({ code, message: 'private backend details', details: token }, { status: 400 }))
+    await assert.rejects(api.rpc('manage_workspace_data', { action: 'todo_delete_all' }, token), error => {
+      assert.match(error.message, /HTTP 400/)
+      assert.ok(!error.message.includes('private backend details'))
+      assert.ok(!error.message.includes(token))
+      if (code !== 'private backend details') assert.ok(error.message.includes(code))
+      return true
+    })
+    mock.mock.restore()
+  }
+})

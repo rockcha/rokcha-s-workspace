@@ -41,7 +41,7 @@ async function addLesson(page, name, days, start, end, color) {
 test('주간 반복·수업 CRUD·색상·새로고침·모바일 스크롤', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto('/#/workspace')
-  await expect(page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link')).toHaveText(['나의 작업실', '캘린더', '수업 시간표', '메모함', '링크함', '자료실', '뉴스함', '동기부여의 방', '날씨'])
+  await expect(page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link')).toHaveText(['나의 작업실', '캘린더', '수업 시간표', '메모함', '링크함', '영단어 공부방', '뉴스함', '날씨'])
   await page.getByRole('link', { name: '수업 시간표', exact: true }).click()
   await addLesson(page, '영어 회화', ['월', '수'], '09:00', '10:30', '녹차')
   await addLesson(page, '수학', ['화', '목'], '10:00', '12:00', '하늘')

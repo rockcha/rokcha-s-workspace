@@ -122,7 +122,11 @@ begin
         return jsonb_build_object('error', 'conflict');
       end if;
       if action = 'todo_delete_all' then
-        delete from public.workspace_todos;
+        -- 조건 없는 DELETE를 차단하는 서버에서도 확인한 항목만 삭제합니다.
+        delete from public.workspace_todos t
+        using jsonb_array_elements(payload->'items') p
+        where t.id = (p.value->>'id')::uuid
+          and t.revision = (p.value->>'revision')::integer;
       else
       with ordered as (
         select (value->>'id')::uuid as id, ordinality::integer as position

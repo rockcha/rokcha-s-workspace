@@ -22,7 +22,13 @@ export function createWorkspaceApi(url: string, key: string) {
     } catch {
       throw new Error('연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.')
     }
-    if (!response.ok) throw new Error('작업실에 연결하지 못했어요. 연결 설정을 확인해 주세요.')
+    if (!response.ok) {
+      const failure: unknown = await response.json().catch(() => null)
+      const code = failure && typeof failure === 'object' && 'code' in failure && typeof failure.code === 'string' && /^(?:[0-9A-Z]{5}|PGRST\d{3})$/.test(failure.code)
+        ? failure.code : null
+      // 서버 원문에는 사용자 데이터가 포함될 수 있으므로 상태와 오류 코드만 표시합니다.
+      throw new Error(`작업실 요청을 처리하지 못했어요. 다시 시도해 주세요. (HTTP ${response.status}${code ? ` · ${code}` : ''})`)
+    }
     return response.json()
   }
 

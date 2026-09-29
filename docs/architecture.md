@@ -1,5 +1,7 @@
 # 파일 구조와 확장 기준
 
+영단어 공부방은 `pages/vocabulary-page.tsx`, 모델·편집기·저장은 `features/vocabulary/`에 둡니다. `supabase/vocabulary.sql`의 `vocabulary_words`와 `manage_vocabulary` RPC가 세션 검증, RLS, revision 충돌 검사, 품사·뜻 검증을 적용합니다. 검색은 영단어만 비교하고, 가리기 모드는 페이지 상태로 관리하며 상세의 품사·뜻을 렌더링하지 않습니다. 이전 테스트 주소로 들어와도 단어장을 표시합니다. 저장 실패 시 편집 내용을 유지합니다.
+
 ```text
 src/
   main.tsx                     # React 시작점, 폰트·전역 CSS 로딩
@@ -97,13 +99,10 @@ components/layout/page-header.tsx는 각 화면에서 재사용하는 고정 헤
 
 뉴스함은 pages/news-page.tsx(목록·키 연결), pages/news-article-page.tsx(별도 상세), features/news/use-news.ts(화면 상태), features/news/api.ts(요청·검증)로 구성합니다. World News API의 search-news로 한국 매체의 한국어 본문을 조회하고 상세 진입 시 extract-news로 본문과 다중 이미지를 받습니다. 요약 필드는 사용하지 않습니다. 무료 키는 사용자가 입력하면 이 브라우저의 localStorage에 보관하고 새로고침·재방문 시 복원하며 x-api-key 헤더로 보냅니다. 뉴스 연결 해제로 저장된 키를 삭제합니다. 응답 캐시는 없고 화면 상태만 유지합니다. 동일 요청 병합·단일 요청 큐·1.1초 간격·오래된 응답 차단·무료 한도 안내를 적용합니다. 분야는 URL에 유지하고 목록 복귀 시 카드 포커스를 복원합니다. 별도 서버·SQL은 필요 없으며 제공 범위와 명세는 docs/news.md를 참고하세요.
 
-자료실은 pages/materials-page.tsx와 features/materials의 API·Google SDK·버튼으로 구성합니다. materials.sql의 전용 테이블과 manage_materials RPC를 사용합니다. OAuth 토큰은 영구 저장하지 않으며 파일 원본은 드라이브에 있습니다. 설정은 docs/drive.md에 있습니다.
 
-자료실의 material_folders는 parent_id로 하위 폴더를 구성하고 materials.folder_id는 폴더 삭제 시 null로 변경합니다. manage_materials는 files/folders를 함께 반환합니다. FolderPicker와 buildFolderTree를 재사용하며 download-url.ts에서 파일 형식에 따른 다운로드 주소를 구성합니다.
 
 현재 위치의 지역명은 reverse-geocode.ts에서 BigDataCloud의 브라우저용 API로 조회합니다. 사용자가 위치 권한으로 제공한 현재 좌표만 전송하며 시·구·동 등 반환된 지역명을 중복 제거해 표시합니다. 요청은 8초 제한을 두고 수동 지역 변경·화면 이탈 시 취소합니다. 조회 실패 시 좌표를 표시하며 날씨 조회는 유지합니다. 지역명·좌표는 영구 저장하지 않습니다. API 문서: https://www.bigdatacloud.com/docs/article/why-is-reverse-geocoding-api-free
 
-동기부여의 방은 pages/motivation-page.tsx와 features/motivation에 둡니다. 유형(kind)은 quote/youtube이며 콘텐츠별 UI와 URL 검증을 분리합니다. manage_motivation RPC와 motivation_items 테이블은 세션 검증·읽기 RLS·수정/삭제 revision 충돌 검사를 적용합니다. 직접 테이블 쓰기는 차단합니다. 유튜브 ID만 저장하고 썸네일·플레이어 주소는 검증한 ID로 구성합니다. 플레이어는 클릭 시 생성하며 동시에 하나만 재생합니다.
 
 
 할 일은 features/todos의 useTodos와 TodoList로 구성합니다. 기존 useCollection과 manage_workspace_data의 todo_list/save/delete/reorder/delete_all을 재사용하며 workspace_todos 테이블에 저장합니다. priority 오름차순으로 조회하고 새 항목은 잠금 안에서 최대 priority + 1을 배정합니다. 완료·제목 수정은 순서를 바꾸지 않습니다. 순서 변경과 전체 삭제는 전체 항목의 ID·revision·개수·중복을 검증한 뒤 하나의 트랜잭션으로 적용합니다. 순위가 바뀐 행의 revision을 올리며 전체 삭제에는 confirmed: true가 필요합니다. 다른 기기의 추가·삭제·수정 이후 오래된 요청은 충돌로 거부합니다. 세션 기반 RLS와 직접 쓰기 차단을 유지합니다.

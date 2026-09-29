@@ -44,7 +44,7 @@ export function TodoList({ todos }: { todos: TodosState }) {
     <div className="flex items-center gap-2">
       <ListTodo className="size-5 text-primary" strokeWidth={1.5} aria-hidden="true" />
       <h2 id="todos-title" className="text-base sm:text-lg">할 일 리스트</h2>
-      <Button type="button" variant="ghost" size="sm" disabled={interacting || !!editing || todos.items.length === 0} onClick={event => { deleteTrigger.current = event.currentTarget; setDeleteAllFailed(false); setDeletingAll([...todos.items]) }} className="ml-auto h-8 shrink-0 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive"><Trash2 aria-hidden="true" className="size-3.5" />전체 삭제</Button>
+      <Button type="button" variant="destructive-ghost" size="sm" disabled={interacting || !!editing || todos.items.length === 0} onClick={event => { deleteTrigger.current = event.currentTarget; setDeleteAllFailed(false); setDeletingAll([...todos.items]) }} className="ml-auto h-8 shrink-0 gap-1.5 px-2 text-xs"><Trash2 aria-hidden="true" className="size-3.5" />전체 삭제</Button>
     </div>
     <div role="group" aria-label="할 일 필터" className="mt-3 flex shrink-0 gap-1 rounded-xl bg-secondary/60 p-1">
       {filters.map(({ id, label }) => <Button key={id} type="button" variant="ghost" size="sm" aria-pressed={filter === id} disabled={todos.busy || !!order.dragging || !!editing} onClick={() => setFilter(id)} className={cn('h-8 min-w-0 flex-1 gap-1 rounded-lg px-1 text-xs text-muted-foreground', filter === id && 'bg-card text-primary shadow-sm hover:bg-card')}>
@@ -74,7 +74,7 @@ export function TodoList({ todos }: { todos: TodosState }) {
           <input type="checkbox" checked={item.completed} disabled={interacting || !!editing} onChange={async () => { if (await todos.save(item.title, item, !item.completed) && filter !== 'all') requestAnimationFrame(() => order.list.current?.focus()) }} aria-label={`${item.title} 완료`} className="mt-2 size-4 shrink-0 cursor-pointer accent-primary focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-default" />
           <button id={`todo-order-${item.id}`} data-todo-drag type="button" aria-label={`${item.title} 순서 변경`} aria-describedby="todo-order-keyboard" disabled={disabled || !!editing} className={cn('min-h-8 min-w-0 flex-1 select-none rounded-md py-1.5 text-left text-sm break-words cursor-grab active:cursor-grabbing focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-default', item.completed && 'text-muted-foreground line-through')}>{item.title}</button>
           <Button id={`todo-edit-${item.id}`} variant="ghost" size="icon" aria-label={`${item.title} 수정`} disabled={interacting || !!editing} onClick={() => { setEditing(item); setDraft(item.title) }} className="size-8 shrink-0"><Pencil className="size-3.5" aria-hidden="true" /></Button>
-          <Button variant="ghost" size="icon" aria-label={`${item.title} 삭제`} disabled={interacting || !!editing} onClick={event => { deleteTrigger.current = event.currentTarget; setDeleting(item) }} className="size-8 shrink-0 text-muted-foreground hover:text-destructive"><Trash2 className="size-3.5" aria-hidden="true" /></Button>
+          <Button variant="destructive-ghost" size="icon" aria-label={`${item.title} 삭제`} disabled={interacting || !!editing} onClick={event => { deleteTrigger.current = event.currentTarget; setDeleting(item) }} className="size-8 shrink-0"><Trash2 className="size-3.5" aria-hidden="true" /></Button>
         </>}
       </li>) : <li className="py-6 text-center text-sm text-muted-foreground">{filters.find(item => item.id === filter)?.empty}</li>}
     </ul>}
@@ -86,7 +86,7 @@ export function TodoList({ todos }: { todos: TodosState }) {
         <AlertDialogFooter>
           {deleteAllFailed && <Button type="button" variant="outline" disabled={todos.busy} onClick={() => { closeDelete(); todos.retry() }}>다시 불러오기</Button>}
           <AlertDialogCancel disabled={todos.busy}>취소</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" disabled={todos.busy || deleteAllFailed} onClick={async event => {
+          <AlertDialogAction variant="destructive-ghost" disabled={todos.busy || deleteAllFailed} onClick={async event => {
             event.preventDefault()
             if (deletingAll) {
               if (await todos.removeAll(deletingAll)) { setDeletingAll(null); setFilter('all') }
