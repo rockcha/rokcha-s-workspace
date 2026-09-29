@@ -1,12 +1,12 @@
 import { toast } from 'sonner'
 import { useCollection } from '@/features/workspace-data/use-collection'
 
-export type Todo = { id: string; title: string; completed: boolean; revision: number }
+export type Todo = { id: string; title: string; completed: boolean; revision: number; priority: number }
 
 function validTodo(value: unknown): value is Todo {
   if (!value || typeof value !== 'object') return false
   const item = value as Todo
-  return typeof item.id === 'string' && typeof item.title === 'string' && typeof item.completed === 'boolean' && Number.isInteger(item.revision)
+  return typeof item.id === 'string' && typeof item.title === 'string' && typeof item.completed === 'boolean' && Number.isInteger(item.revision) && Number.isInteger(item.priority) && item.priority > 0
 }
 
 export function useTodos(token: string) {
@@ -24,7 +24,19 @@ export function useTodos(token: string) {
     else toast.success('할 일을 삭제했어요.', { id: 'todo-mutation' })
     return !error
   }
-  return { ...collection, save, remove }
+  async function reorder(items: Todo[]) {
+    const error = await collection.mutate('reorder', { items: items.map(({ id, revision }) => ({ id, revision })) })
+    if (error) toast.error(error, { id: 'todo-mutation', action: { label: '다시 불러오기', onClick: collection.retry } })
+    else toast.success('할 일 우선순위를 바꿨어요.', { id: 'todo-mutation' })
+    return !error
+  }
+  async function removeAll(items: Todo[]) {
+    const error = await collection.mutate('delete_all', { confirmed: true, items: items.map(({ id, revision }) => ({ id, revision })) })
+    if (error) toast.error(error, { id: 'todo-mutation' })
+    else toast.success('할 일을 전체 삭제했어요.', { id: 'todo-mutation' })
+    return !error
+  }
+  return { ...collection, save, remove, reorder, removeAll }
 }
 
 export type TodosState = ReturnType<typeof useTodos>

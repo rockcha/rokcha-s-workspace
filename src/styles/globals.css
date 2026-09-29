@@ -107,6 +107,39 @@
   ::selection { background: var(--accent); color: var(--accent-foreground); }
 }
 
+[data-sonner-toast].workspace-toast {
+  --normal-bg: color-mix(in srgb, var(--accent) 35%, var(--card));
+  --normal-border: var(--border);
+  --normal-text: var(--foreground);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+[data-sonner-toast].workspace-toast[data-type="error"] {
+  --normal-bg: color-mix(in srgb, var(--destructive) 4%, var(--card));
+  --normal-border: color-mix(in srgb, var(--destructive) 18%, var(--card));
+}
+
+[data-sonner-toast].workspace-toast [data-description] {
+  color: var(--muted-foreground);
+}
+
+[data-sonner-toast].workspace-toast [data-close-button] {
+  color: var(--muted-foreground);
+  border-color: var(--normal-border);
+}
+
+[data-sonner-toast].workspace-toast:hover [data-close-button]:hover {
+  background: var(--accent);
+  color: var(--primary);
+  border-color: var(--border);
+}
+
+[data-sonner-toast].workspace-toast [data-close-button]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
 .lesson-color { background: var(--lesson-bg); color: var(--lesson-fg); border-color: var(--lesson-fg); }
 .lesson-color[data-color="lemon"] { --lesson-bg: var(--lesson-lemon-bg); --lesson-fg: var(--lesson-lemon-fg); }
 .lesson-color[data-color="coral"] { --lesson-bg: var(--lesson-coral-bg); --lesson-fg: var(--lesson-coral-fg); }

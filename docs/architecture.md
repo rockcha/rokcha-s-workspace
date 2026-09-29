@@ -106,4 +106,6 @@ components/layout/page-header.tsx는 각 화면에서 재사용하는 고정 헤
 동기부여의 방은 pages/motivation-page.tsx와 features/motivation에 둡니다. 유형(kind)은 quote/youtube이며 콘텐츠별 UI와 URL 검증을 분리합니다. manage_motivation RPC와 motivation_items 테이블은 세션 검증·읽기 RLS·수정/삭제 revision 충돌 검사를 적용합니다. 직접 테이블 쓰기는 차단합니다. 유튜브 ID만 저장하고 썸네일·플레이어 주소는 검증한 ID로 구성합니다. 플레이어는 클릭 시 생성하며 동시에 하나만 재생합니다.
 
 
-할 일은 features/todos의 useTodos와 TodoList로 구성합니다. 기존 useCollection과 manage_workspace_data의 todo_list/save/delete를 재사용하며 workspace_todos 테이블에 저장합니다. 세션 기반 RLS, 직접 쓰기 차단, revision 충돌 검사를 적용합니다. 작업실 상단 일정 카드는 Radix Tabs로 오늘 일정·다가오는 일정을 전환하고 아래에는 할 일 리스트를 배치합니다.
+할 일은 features/todos의 useTodos와 TodoList로 구성합니다. 기존 useCollection과 manage_workspace_data의 todo_list/save/delete/reorder/delete_all을 재사용하며 workspace_todos 테이블에 저장합니다. priority 오름차순으로 조회하고 새 항목은 잠금 안에서 최대 priority + 1을 배정합니다. 완료·제목 수정은 순서를 바꾸지 않습니다. 순서 변경과 전체 삭제는 전체 항목의 ID·revision·개수·중복을 검증한 뒤 하나의 트랜잭션으로 적용합니다. 순위가 바뀐 행의 revision을 올리며 전체 삭제에는 confirmed: true가 필요합니다. 다른 기기의 추가·삭제·수정 이후 오래된 요청은 충돌로 거부합니다. 세션 기반 RLS와 직접 쓰기 차단을 유지합니다.
+
+use-todo-reorder.ts는 Pointer Events 기반 마우스·터치 드래그, 목록 가장자리 자동 스크롤, Escape 취소와 키보드 이동을 처리합니다. order.ts는 필터로 숨긴 항목의 자리를 유지하며 보이는 항목만 재배치합니다. 드래그 중에는 삽입 위치를 표시하고 서버 저장 성공 후 실제 순서를 반영하므로 실패 시 기존 순서를 유지합니다. 작업실 상단 일정 카드는 Radix Tabs로 오늘 일정·다가오는 일정을 전환하고 아래에는 할 일 리스트를 배치합니다.

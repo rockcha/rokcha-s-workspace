@@ -7,6 +7,16 @@ create table if not exists public.workspace_todos (
   revision integer not null default 1,
   created_at timestamptz not null default now()
 );
+-- 기존 표시 순서를 최초 우선순위로 보존합니다. 재실행 시 저장된 순서는 유지합니다.
+alter table public.workspace_todos add column if not exists priority integer check (priority > 0);
+with ranked as (
+  select id, row_number() over (order by completed, created_at desc, id)::integer as position
+  from public.workspace_todos
+)
+update public.workspace_todos t set priority = r.position from ranked r
+where t.id = r.id and t.priority is null;
+alter table public.workspace_todos alter column priority set not null;
+create index if not exists workspace_todos_priority on public.workspace_todos(priority, id);
 alter table public.workspace_todos enable row level security;
 revoke all on public.workspace_todos from public, anon, authenticated;
 grant select on public.workspace_todos to anon;
@@ -90,9 +100,37 @@ begin
       elsif current_item is null and coalesce((payload->>'revision')::integer, 0) <> 0 then
         return jsonb_build_object('error', 'conflict');
       end if;
-      insert into public.workspace_todos(id, title, completed)
-      values(target, btrim(payload->>'title'), (payload->>'completed')::boolean)
+      insert into public.workspace_todos(id, title, completed, priority)
+      values(target, btrim(payload->>'title'), (payload->>'completed')::boolean,
+        coalesce((select max(priority) from public.workspace_todos), 0) + 1)
       on conflict(id) do update set title=excluded.title, completed=excluded.completed, revision=public.workspace_todos.revision+1;
+    when 'todo_reorder', 'todo_delete_all' then
+      if action = 'todo_delete_all' and payload->'confirmed' is distinct from 'true'::jsonb then
+        raise exception 'Explicit confirmation required' using errcode = '22023';
+      end if;
+      -- 전체 항목의 ID와 revision을 비교해 다른 기기의 추가·삭제·변경을 감지합니다.
+      if jsonb_typeof(payload->'items') is distinct from 'array' then
+        raise exception 'Todo order must be an array' using errcode = '22023';
+      end if;
+      if jsonb_array_length(payload->'items') <> (select count(*) from public.workspace_todos)
+        or (select count(distinct (value->>'id')::uuid) from jsonb_array_elements(payload->'items')) <> jsonb_array_length(payload->'items')
+        or exists (
+          select 1 from jsonb_array_elements(payload->'items') p
+          left join public.workspace_todos t on t.id = (p.value->>'id')::uuid
+          where t.id is null or t.revision is distinct from (p.value->>'revision')::integer
+        ) then
+        return jsonb_build_object('error', 'conflict');
+      end if;
+      if action = 'todo_delete_all' then
+        delete from public.workspace_todos;
+      else
+      with ordered as (
+        select (value->>'id')::uuid as id, ordinality::integer as position
+        from jsonb_array_elements(payload->'items') with ordinality
+      )
+      update public.workspace_todos t set priority = o.position, revision = t.revision + 1
+      from ordered o where t.id = o.id and t.priority <> o.position;
+      end if;
     when 'todo_delete' then
       delete from public.workspace_todos where id=(payload->>'id')::uuid and revision=(payload->>'revision')::integer;
       if not found then return jsonb_build_object('error', 'conflict'); end if;
@@ -173,7 +211,7 @@ begin
       return jsonb_build_object('ok', true);
     else raise exception 'Unknown workspace data action';
   end case;
-  if action like 'todo_%' then return (select coalesce(jsonb_agg(t order by t.completed, t.created_at desc, t.id),'[]'::jsonb) from public.workspace_todos t); end if;
+  if action like 'todo_%' then return (select coalesce(jsonb_agg(t order by t.priority, t.id),'[]'::jsonb) from public.workspace_todos t); end if;
   if action like 'calendar_%' then return (select coalesce(jsonb_agg(c order by c.date,c.time,c.id),'[]'::jsonb) from public.calendar_entries c); end if;
   if action like 'lesson_%' then return (select coalesce(jsonb_agg(l order by l.start,l.id),'[]'::jsonb) from public.timetable_lessons l); end if;
   return (select jsonb_build_object('content', content, 'revision', revision) from public.workspace_memo where id);

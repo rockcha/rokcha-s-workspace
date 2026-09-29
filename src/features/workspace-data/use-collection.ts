@@ -20,7 +20,7 @@ export function useCollection<T>(token: string, domain: 'calendar' | 'lesson' | 
     return () => { active = false }
   }, [token, domain, validate, attempt])
 
-  async function mutate(action: 'save' | 'delete', payload: Record<string, unknown>) {
+  async function mutate(action: 'save' | 'delete' | 'reorder' | 'delete_all', payload: Record<string, unknown>) {
     if (pending.current || loading || error) return '기록을 불러온 뒤 다시 시도해 주세요.'
     pending.current = true
     setBusy(true)

@@ -2,6 +2,16 @@
 
 이메일·회원가입 없이 보안코드 하나로 입장합니다. Supabase Data API의 SQL 함수를 사용하며 Supabase Auth 계정이나 Edge Function 배포는 필요하지 않습니다.
 
+## 할 일 우선순위 업데이트
+
+기존 프로젝트는 [workspace-data.sql](../supabase/workspace-data.sql) **전체**를 SQL Editor에서 실행한 뒤 앱을 새로고침합니다. 보안코드 SQL을 다시 실행할 필요는 없습니다. 운영 DB에는 자동으로 적용되지 않습니다.
+
+- 기존 할 일의 내용·완료 상태를 보존하고 기존 표시 순서대로 priority를 한 번 배정합니다. 재실행해도 사용자가 정한 순서는 유지합니다.
+- 새 항목은 전체 목록의 마지막 순위에 추가합니다. 완료·완료 취소·제목 수정으로 순위가 바뀌지 않습니다.
+- todo_reorder는 전체 목록의 ID와 revision을 받아 한 번에 순서를 저장합니다. 다른 기기에서 항목을 추가·수정·삭제했다면 오래된 요청을 거부합니다. 실패 알림의 다시 불러오기를 누른 후 다시 이동하면 됩니다.
+- 필터에서 순서를 바꾸면 보이는 항목이 차지하던 자리끼리만 이동합니다. 숨겨진 항목의 자리는 유지합니다.
+- SQL을 아직 적용하지 않았다면 새 앱은 우선순위 없는 목록을 정상 응답으로 처리하지 않습니다. SQL 적용 후 할 일의 다시 불러오기를 누릅니다.
+
 ## 처음 연결하기
 
 1. Supabase 프로젝트의 SQL Editor에서 `supabase/workspace-access.sql` 전체를 붙여 넣습니다.
@@ -106,3 +116,7 @@ create policy workspace_access on public.your_table
 ## 할 일 리스트 설정
 
 기존 프로젝트도 [supabase/workspace-data.sql](../supabase/workspace-data.sql) 전체를 SQL Editor에서 다시 실행하세요. workspace_todos 테이블과 todo_list/save/delete RPC 분기가 추가되며 기존 일정·노트·시간표·메모는 유지됩니다. 할 일은 최대 200자이며 완료 상태도 서버에 저장합니다. 직접 쓰기와 세션 없는 접근을 차단하고 수정·삭제에는 revision을 검사합니다. 운영 SQL 적용은 로컬 테스트에 포함되지 않습니다.
+
+## 할 일 전체 삭제 업데이트
+
+[workspace-data.sql](../supabase/workspace-data.sql) 전체를 SQL Editor에서 다시 실행합니다. 스크립트 적용 자체는 할 일을 삭제하지 않습니다. 추가되는 todo_delete_all은 세션과 명시적 confirmed: true, 확인창을 열 때의 전체 ID·revision 목록을 검사한 후 하나의 트랜잭션으로 삭제합니다. 목록의 추가·수정·삭제·순서 변경이 있었다면 전부 보존하고 충돌을 반환합니다. 일정·메모 등 다른 데이터는 삭제하지 않습니다.

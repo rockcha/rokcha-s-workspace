@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react'
-import { Check, ChevronDown, GripHorizontal, PencilLine, Smile, X } from 'lucide-react'
+import type { HTMLAttributes, ReactNode } from 'react'
+import { Check, ChevronDown, PencilLine, Smile, X } from 'lucide-react'
 import { Dialog as FloatingDialog } from 'radix-ui'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,7 +14,7 @@ const emojis = [
   ['🔥', '불꽃'], ['👍', '좋아요'], ['😊', '미소'], ['🎉', '축하'], ['☕', '커피'], ['🍀', '네잎클로버'],
 ] as const
 
-export function WorkspaceMemo({ memo, compact = false }: { memo: WorkspaceMemoState; compact?: boolean }) {
+export function WorkspaceMemo({ memo, compact = false, headerDrag, headerAction }: { memo: WorkspaceMemoState; compact?: boolean; headerDrag?: HTMLAttributes<HTMLDivElement>; headerAction?: ReactNode }) {
   const id = useId()
   const editor = useRef<HTMLTextAreaElement>(null)
   const [emojisOpen, setEmojisOpen] = useState(false)
@@ -33,11 +34,12 @@ export function WorkspaceMemo({ memo, compact = false }: { memo: WorkspaceMemoSt
   return (
     <section aria-labelledby={id} className={cn('flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-sm', compact ? 'h-[min(42rem,calc(100dvh-8rem))]' : 'min-h-[34rem] lg:h-full')}>
       <Collapsible open={emojisOpen} onOpenChange={setEmojisOpen} className="shrink-0 border-b">
-      <div className="px-4 py-3 sm:px-6">
+      <div {...headerDrag} className={cn('px-4 py-3 sm:px-6', headerDrag && 'touch-none select-none cursor-grab active:cursor-grabbing')}>
         <div className="flex min-h-9 items-center gap-2">
           <PencilLine aria-hidden="true" className="size-5 text-primary" />
-          <h2 id={id} className="text-base sm:text-lg">작업실 메모</h2>
+          <h2 id={id} className="min-w-0 text-base sm:text-lg">{headerDrag ? <button type="button" data-memo-drag aria-label="메모장 이동 (드래그 또는 방향키)" className="rounded-md text-left cursor-grab active:cursor-grabbing focus-visible:outline-2 focus-visible:outline-ring">작업실 메모</button> : '작업실 메모'}</h2>
           <CollapsibleTrigger asChild><Button type="button" variant="ghost" size="sm" className="ml-auto gap-1.5 px-2 text-muted-foreground" aria-label={emojisOpen ? '이모지 접기' : '이모지 펼치기'}><Smile aria-hidden="true" className="size-4" /><span className="text-xs">이모지</span><ChevronDown aria-hidden="true" className={cn('size-3.5 transition-transform', emojisOpen && 'rotate-180')} /></Button></CollapsibleTrigger>
+          {headerAction}
         </div>
       </div>
       <CollapsibleContent><div role="group" aria-label="이모지 추가" className="flex max-h-32 flex-wrap gap-1 overflow-y-auto px-4 pb-3 sm:px-6">
@@ -71,20 +73,32 @@ export function FloatingWorkspaceMemo({ memo }: { memo: WorkspaceMemoState }) {
         </Button>
       </FloatingDialog.Trigger>
       <FloatingDialog.Portal>
-        <FloatingDialog.Content ref={panel} aria-describedby={undefined} onOpenAutoFocus={event => { event.preventDefault(); panel.current?.querySelector('textarea')?.focus() }} style={position ? { left: `min(${position.x}px, max(12px, calc(100vw - 40rem - 12px)))`, top: `min(${position.y}px, max(12px, calc(100dvh - min(42rem, calc(100dvh - 8rem)) - 52px)))` } : { left: 12, bottom: 84 }} className="fixed z-50 w-[min(40rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border bg-card shadow-xl outline-none">
+        <FloatingDialog.Content ref={panel} aria-describedby={undefined} onOpenAutoFocus={event => { event.preventDefault(); panel.current?.querySelector('textarea')?.focus() }} style={position ? { left: `min(${position.x}px, max(12px, calc(100vw - 40rem - 12px)))`, top: `min(${position.y}px, max(12px, calc(100dvh - min(42rem, calc(100dvh - 8rem)) - 14px)))` } : { left: 12, bottom: 84 }} className="fixed z-50 w-[min(40rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border bg-card shadow-xl outline-none">
           <FloatingDialog.Title className="sr-only">작업실 메모장</FloatingDialog.Title>
-          <div className="flex h-10 items-center border-b bg-muted/50 px-2">
-            <Button type="button" variant="ghost" className="h-8 min-w-0 flex-1 touch-none cursor-grab justify-start gap-2 text-xs text-muted-foreground active:cursor-grabbing" aria-label="메모장 이동 (드래그 또는 방향키)"
-              onPointerDown={event => { if (event.button !== 0) return; const bounds = panel.current?.getBoundingClientRect(); if (!bounds) return; drag.current = { x: event.clientX, y: event.clientY, left: bounds.left, top: bounds.top }; event.currentTarget.setPointerCapture(event.pointerId) }}
-              onPointerMove={event => { if (drag.current) move(drag.current.left + event.clientX - drag.current.x, drag.current.top + event.clientY - drag.current.y) }}
-              onPointerUp={event => { drag.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId) }}
-              onPointerCancel={() => { drag.current = null }} onLostPointerCapture={() => { drag.current = null }}
-              onKeyDown={event => { const delta: Record<string, [number, number]> = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }; const step = delta[event.key]; const bounds = panel.current?.getBoundingClientRect(); if (step && bounds) { event.preventDefault(); move(bounds.left + step[0], bounds.top + step[1]) } }}>
-              <GripHorizontal aria-hidden="true" className="size-4" />끌어서 이동
-            </Button>
-            <FloatingDialog.Close asChild><Button type="button" variant="ghost" size="icon" className="size-8" aria-label="메모장 닫기"><X aria-hidden="true" className="size-4" /></Button></FloatingDialog.Close>
-          </div>
-          <WorkspaceMemo memo={memo} compact />
+          <WorkspaceMemo memo={memo} compact headerDrag={{
+            onPointerDown: event => {
+              if (event.button !== 0 || !event.isPrimary) return
+              const control = (event.target as HTMLElement).closest('button')
+              if (control && !control.hasAttribute('data-memo-drag')) return
+              const bounds = panel.current?.getBoundingClientRect()
+              if (!bounds) return
+              event.preventDefault()
+              event.currentTarget.querySelector<HTMLButtonElement>('[data-memo-drag]')?.focus({ preventScroll: true })
+              drag.current = { x: event.clientX, y: event.clientY, left: bounds.left, top: bounds.top }
+              event.currentTarget.setPointerCapture(event.pointerId)
+            },
+            onPointerMove: event => { if (drag.current) move(drag.current.left + event.clientX - drag.current.x, drag.current.top + event.clientY - drag.current.y) },
+            onPointerUp: event => { drag.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId) },
+            onPointerCancel: () => { drag.current = null },
+            onLostPointerCapture: () => { drag.current = null },
+            onKeyDown: event => {
+              if (!(event.target as HTMLElement).closest('[data-memo-drag]')) return
+              const delta: Record<string, [number, number]> = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }
+              const step = delta[event.key]
+              const bounds = panel.current?.getBoundingClientRect()
+              if (step && bounds) { event.preventDefault(); move(bounds.left + step[0], bounds.top + step[1]) }
+            },
+          }} headerAction={<FloatingDialog.Close asChild><Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" aria-label="메모장 닫기"><X aria-hidden="true" className="size-4" /></Button></FloatingDialog.Close>} />
         </FloatingDialog.Content>
       </FloatingDialog.Portal>
     </FloatingDialog.Root>

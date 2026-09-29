@@ -7,22 +7,21 @@ export function Toaster(props: ToasterProps) {
     <Sonner
       theme="light"
       position="bottom-right"
-      closeButton
+      closeButton={false}
       containerAriaLabel="알림"
       icons={{
-        success: <CircleCheck className="size-4" />,
-        info: <Info className="size-4" />,
-        warning: <TriangleAlert className="size-4" />,
-        error: <CircleX className="size-4" />,
-        loading: <LoaderCircle className="size-4 animate-spin" />,
+        success: <CircleCheck aria-hidden="true" className="size-4 text-primary" />,
+        info: <Info aria-hidden="true" className="size-4 text-primary" />,
+        warning: <TriangleAlert aria-hidden="true" className="size-4 text-chart-3" />,
+        error: <CircleX aria-hidden="true" className="size-4 text-destructive" />,
+        loading: <LoaderCircle aria-hidden="true" className="size-4 text-primary motion-safe:animate-spin" />,
       }}
       style={{
         '--border-radius': 'var(--radius)',
         fontFamily: 'var(--font-sans)',
       } as CSSProperties}
       toastOptions={{
-        classNames: { toast: 'font-sans', closeButton: 'cursor-pointer' },
-        closeButtonAriaLabel: '알림 닫기',
+        classNames: { toast: 'workspace-toast font-sans' },
       }}
       {...props}
     />
