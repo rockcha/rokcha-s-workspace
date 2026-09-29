@@ -51,6 +51,8 @@ scripts/npm.ps1                # Windows 로컬 Node 실행 지원
 
 ## 의존 방향
 
+캘린더 공휴일은 `features/calendar/holidays.ts`에서 `https://holidays.hyunbin.page/basic.json`을 조회합니다. 월력요항 기반의 외부 가공 자료이며 정부 API 직접 연결은 아닙니다. 연도별 날짜·한국어 명칭 배열을 검증하고 한 날짜의 여러 공휴일과 대체공휴일을 보존합니다. 전체 제공 연도를 받아 연말·연초의 인접 월에도 표시합니다. 요청은 12초 제한과 취소를 지원하며 성공 응답만 메모리에 1시간 캐시합니다. 실패는 일정·날씨 기능을 막지 않고 재시도를 제공하며 미제공 연도는 별도로 안내합니다. 데이터 출처: [holidays-kr](https://github.com/hyunbinseo/holidays-kr).
+
 날씨는 `pages/weather-page.tsx`와 `features/weather/api.ts`로 구성하며 `#/weather`에서 엽니다. Open-Meteo 날씨·CAMS 대기질 API를 독립 조회하여 일부 실패 시 나머지 정보를 유지합니다. 요청은 12초 제한과 페이지/지역 변경 시 취소를 적용합니다. 기본 지역은 서울이며 선택한 주요 도시 ID만 localStorage에 보관합니다. 키·SQL 추가 없이 개인 비상업용 API를 사용합니다. 대기질은 실측이 아닌 모델 예측 농도이며 공급자를 화면에 표시합니다. location.ts의 공유 위치 상태는 날씨와 캘린더가 함께 사용합니다. 현재 위치 좌표는 메모리에만 유지하고 수동 도시 선택만 localStorage에 저장합니다. 캘린더는 daily weather_code를 최대 16일 조회하며 요청 실패가 일정 기능을 막지 않습니다. air-grade.ts는 PM10 30/80/150, PM2.5 15/35/75 경계값을 적용한 참고 등급을 계산합니다.
 
 메모함의 폴더 위치는 `#/notes?folder=<id>`, 새 메모는 `#/notes/new?folder=<id>`, 기존 메모 상세는 `#/notes/<id>?folder=<id>`로 연결합니다. 상세 페이지는 검증된 세션으로 목록을 조회하며 저장 성공 후 선택한 폴더로 돌아갑니다. 새로고침과 브라우저 뒤로 가기에서도 주소의 폴더·메모를 불러옵니다.

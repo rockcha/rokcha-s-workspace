@@ -8,6 +8,8 @@ import { dateKey, sortEntries, useToday } from '@/features/calendar/use-calendar
 import type { CalendarState } from '@/features/calendar/use-calendar'
 import { useWeatherLocation } from '@/features/weather/location'
 import { loadCalendarWeather, weatherDescription, weatherEmoji } from '@/features/weather/api'
+import { loadHolidays } from '@/features/calendar/holidays'
+import type { Holidays } from '@/features/calendar/holidays'
 
 const weekdays = ['월', '화', '수', '목', '금', '토', '일']
 
@@ -17,6 +19,15 @@ export function CalendarPage({ calendar, monthKey }: { calendar: CalendarState; 
   const [forecast, setForecast] = useState<Record<string, number>>({})
   const [weatherError, setWeatherError] = useState(false)
   const [weatherRetry, setWeatherRetry] = useState(0)
+  const [holidays, setHolidays] = useState<Holidays>({})
+  const [holidayError, setHolidayError] = useState(false)
+  const [holidayRetry, setHolidayRetry] = useState(0)
+  useEffect(() => {
+    const controller = new AbortController()
+    setHolidayError(false)
+    void loadHolidays(controller.signal).then(data => { if (!controller.signal.aborted) setHolidays(data) }).catch(() => { if (!controller.signal.aborted) setHolidayError(true) })
+    return () => controller.abort()
+  }, [todayKey, holidayRetry])
   useEffect(() => {
     const controller = new AbortController()
     setForecast({})
@@ -56,10 +67,11 @@ export function CalendarPage({ calendar, monthKey }: { calendar: CalendarState; 
             const date = new Date(year, monthIndex, row * 7 + column - offset + 1)
             const isToday = dateKey(date) === todayKey
             const key = dateKey(date)
+            const holiday = holidays[key]?.join(' · ')
             const entries = sortEntries(calendar.entries.filter(entry => entry.date === key && entry.type === 'event'))
             return <td key={column} className="border-r border-b p-0.5 align-top last:border-r-0 sm:p-1">
-              <a href={`#/calendar/${key}`} aria-label={`${key} 상세 보기`} className="block h-28 overflow-hidden rounded-md p-0.5 text-left hover:bg-secondary/60 focus-visible:outline-2 focus-visible:outline-ring sm:h-32 sm:p-1">
-                <span className="flex items-center justify-between"><time dateTime={key} aria-current={isToday ? 'date' : undefined} className={cn('flex size-5 shrink-0 items-center justify-center rounded-full text-xs sm:size-7 sm:text-sm', date.getMonth() !== monthIndex && 'text-muted-foreground/45', isToday && 'bg-primary text-primary-foreground')}>{date.getDate()}</time>{forecast[key] !== undefined && <span role="img" aria-label={`${location.name} ${weatherDescription(forecast[key]).label} 예보`} title={`${location.name} · ${weatherDescription(forecast[key]).label}`} className="shrink-0 text-[10px] leading-none sm:text-base">{weatherEmoji(forecast[key])}</span>}</span>
+              <a href={`#/calendar/${key}`} aria-label={`${key} 상세 보기`} aria-description={holiday} title={holiday} className="block h-28 overflow-hidden rounded-md p-0.5 text-left hover:bg-secondary/60 focus-visible:outline-2 focus-visible:outline-ring sm:h-32 sm:p-1">
+                <span className="flex min-w-0 flex-wrap items-center gap-x-0.5 gap-y-1 sm:flex-nowrap sm:gap-x-1"><time dateTime={key} aria-current={isToday ? 'date' : undefined} className={cn('flex size-5 shrink-0 items-center justify-center rounded-full text-xs sm:size-7 sm:text-sm', date.getMonth() !== monthIndex && 'text-muted-foreground/45', isToday && 'bg-primary text-primary-foreground', holiday && 'text-destructive', holiday && isToday && 'bg-destructive/10')}>{date.getDate()}</time>{holiday && <span className="min-w-0 flex-1 basis-full line-clamp-2 break-words text-[9px] leading-tight text-destructive sm:basis-auto sm:text-[11px]">{holiday}</span>}{forecast[key] !== undefined && <span role="img" aria-label={`${location.name} ${weatherDescription(forecast[key]).label} 예보`} title={`${location.name} · ${weatherDescription(forecast[key]).label}`} className="ml-auto shrink-0 text-[10px] leading-none sm:text-base">{weatherEmoji(forecast[key])}</span>}</span>
                 {entries.slice(0, 2).map(entry => <span key={entry.id} className={cn('mt-1 block truncate rounded px-1 py-1 text-[10px] sm:text-xs', entry.type === 'event' ? 'bg-secondary text-secondary-foreground' : 'border border-dashed text-muted-foreground')}><span className="hidden sm:inline">{entry.type === 'note' ? '노트 · ' : entry.time ? `${entry.time} ` : ''}</span>{entry.title}</span>)}
                 {entries.length > 2 && <span className="block text-[10px] text-muted-foreground">+{entries.length - 2}개</span>}
               </a>
@@ -67,6 +79,7 @@ export function CalendarPage({ calendar, monthKey }: { calendar: CalendarState; 
           })}</tr>)}</tbody>
         </table>
         {weatherError && <div className="flex flex-wrap items-center gap-2 border-t px-5 py-3 text-xs text-muted-foreground"><span role="status">날씨를 불러오지 못했어요.</span><Button variant="ghost" size="sm" onClick={() => setWeatherRetry(value => value + 1)}>날씨 다시 불러오기</Button></div>}
+        {holidayError ? <div className="flex flex-wrap items-center gap-2 border-t px-5 py-3 text-xs text-muted-foreground"><span role="status">공휴일을 불러오지 못했어요.</span><Button variant="ghost" size="sm" onClick={() => setHolidayRetry(value => value + 1)}>공휴일 다시 불러오기</Button></div> : Object.keys(holidays).length > 0 && !Object.keys(holidays).some(date => date.startsWith(`${year}-`)) && <p role="status" className="border-t px-5 py-3 text-xs text-muted-foreground">{year}년 공휴일 자료가 아직 제공되지 않았어요.</p>}
       </div>
       {adding && <EntryEditor date={monthKey && monthKey !== todayKey.slice(0, 7) ? `${monthKey}-01` : todayKey} calendar={calendar} onClose={() => setAdding(false)} onCloseAutoFocus={() => addButton.current?.focus()} />}
     </section>
