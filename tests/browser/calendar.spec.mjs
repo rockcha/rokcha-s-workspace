@@ -15,6 +15,13 @@ test.beforeEach(async ({ page }) => {
 
 async function add(page, { date = '2026-12-31', title, note = false, time = '' }) {
   await page.goto(`/#/calendar/${date}`)
+  if (note) {
+    const content = page.getByLabel('오늘의 노트 내용')
+    await content.fill(title)
+    await page.getByRole('button', { name: '노트 저장', exact: true }).click()
+    await expect(content).toBeFocused()
+    return
+  }
   await page.getByRole('button', { name: note ? '노트 추가' : '일정 추가', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: note ? '노트 추가' : '일정 추가' })
   await dialog.getByLabel(note ? '내용' : '제목', { exact: true }).fill(title)

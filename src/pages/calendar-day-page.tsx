@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, CalendarDays, NotebookPen, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EntryEditor } from '@/features/calendar/entry-editor'
+import { DayNoteEditor } from '@/features/calendar/day-note-editor'
 import { sortEntries } from '@/features/calendar/use-calendar'
 import type { CalendarEntry, CalendarState } from '@/features/calendar/use-calendar'
 
@@ -41,8 +42,8 @@ export function CalendarDayPage({ date, calendar }: { date: string; calendar: Ca
       </li>)}</ul> : <p className="py-10 text-sm text-muted-foreground">아직 일정이 없어요. 이 날짜에 여러 일정을 추가할 수 있어요.</p>}
     </section>
     <section aria-labelledby="day-note" className="flex min-w-0 flex-col rounded-2xl border bg-card p-5 shadow-sm sm:p-6 lg:min-h-80">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="day-note" className="flex items-center gap-2 whitespace-nowrap text-lg"><NotebookPen aria-hidden="true" className="size-5 text-primary" />오늘의 노트</h2><Button type="button" variant={note ? "ghost" : "outline"} size="sm" disabled={calendar.loading || calendar.busy || !!calendar.error} onClick={() => edit('note', note)}>{note ? '노트 수정·삭제' : '노트 추가'}</Button></div>
-      {note ? <div className="mt-5 flex-1 rounded-xl bg-secondary/50 p-4"><p className="whitespace-pre-wrap break-words text-sm leading-7">{note.content}</p></div> : <p className="py-10 text-sm text-muted-foreground">휴강 안내처럼 이 날짜에 확인할 내용을 적어 두세요.</p>}
+      <h2 id="day-note" className="flex items-center gap-2 whitespace-nowrap text-lg"><NotebookPen aria-hidden="true" className="size-5 text-primary" />오늘의 노트</h2>
+      <DayNoteEditor key={date} date={date} note={note} calendar={calendar} />
     </section>
     </div>
     {editor && <EntryEditor date={date} {...editor} calendar={calendar} onClose={close} />}

@@ -1,5 +1,7 @@
 # 록차의 작업실
 
+취업 캘린더(`#/career-calendar`)는 캘린더 바로 아래에 있습니다. 마감 날짜·시간을 필수로 지정하고 제목·이름을 붙인 여러 링크·메모를 저장합니다. 월간 달력에는 마감 시간과 일정 제목을 표시하며 날짜 상세에서 링크를 새 탭으로 열고 일정을 수정·삭제합니다. 사용 전 [취업 캘린더 SQL](supabase/career-calendar.sql) 전체를 Supabase SQL Editor에서 한 번 실행하세요. 기존 캘린더와 데이터는 분리됩니다.
+
 필사함(`#/transcriptions`)은 링크함 아래에 있습니다. 제목·내용을 작성하고 최신순 목록에서 상세 보기·수정·삭제할 수 있으며 작성일은 자동 기록됩니다. 사용 전 [필사함 SQL](supabase/transcriptions.sql) 전체를 Supabase SQL Editor에서 한 번 실행하세요.
 
 영단어 공부방(`#/vocabulary`)은 단어·품사별 여러 뜻을 저장하고 수정·삭제합니다. 검색은 영단어만 대상으로 하며, 단어 가리기 모드를 켜면 선택한 단어의 뜻도 숨깁니다. 새 기능을 사용하기 전에 [단어장 SQL](supabase/vocabulary.sql)을 Supabase SQL Editor에서 한 번 실행하세요.

@@ -1,11 +1,4 @@
-export function safeWebUrl(value: string): string | null {
-  try {
-    const url = new URL(value.trim())
-    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : null
-  } catch {
-    return null
-  }
-}
+import { safeWebUrl } from '@/lib/web-url'
 
 // Browser CORS rules apply; no third-party proxy receives saved URLs.
 export async function fetchPreviewImage(value: string): Promise<string | null> {

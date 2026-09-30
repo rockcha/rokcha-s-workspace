@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Leaf, LoaderCircle } from 'lucide-react'
+import { LoaderCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { siteConfig } from '@/config/site'
@@ -110,7 +110,7 @@ export function WorkspaceAccess({ children }: { children: (leave: () => Promise<
   return (
     <main className="flex min-h-svh items-center justify-center px-6 py-12">
       <section aria-labelledby="access-title" className="w-full max-w-sm">
-        <h1 id="access-title" className="flex items-center justify-center gap-3 text-3xl tracking-tight"><Leaf className="size-6 shrink-0 text-primary" strokeWidth={1.5} aria-hidden="true" />{siteConfig.name}</h1>
+        <h1 id="access-title" className="flex items-center justify-center gap-3 text-3xl tracking-tight"><span className="shrink-0 text-2xl" aria-hidden="true">🍵</span>{siteConfig.name}</h1>
         {checking ? <p role="status" className="mt-8 flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="size-4 motion-safe:animate-spin" aria-hidden="true" />작업실을 열고 있어요.</p> : (
           <form className="mt-9" onSubmit={(event) => { event.preventDefault(); void enter() }}>
             <label htmlFor="security-code" className="text-sm">보안코드</label>

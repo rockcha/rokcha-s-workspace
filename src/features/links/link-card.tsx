@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowUpRight, FolderInput, Link2, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { SavedLink } from '@/features/links/api'
-import { safeWebUrl } from '@/features/links/preview'
+import { safeWebUrl } from '@/lib/web-url'
 
 export function LinkCard({ link, onEdit, onMove, onDelete }: { link: SavedLink; onEdit: () => void; onMove: () => void; onDelete: () => void }) {
   const [failedImage, setFailedImage] = useState('')
