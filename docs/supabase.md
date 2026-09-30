@@ -1,5 +1,9 @@
 # 개인 작업실 보안코드 설정
 
+## 필사함 설정
+
+기존 접속 설정이 된 프로젝트에서 [transcriptions.sql](../supabase/transcriptions.sql) 전체를 SQL Editor에서 한 번 실행하세요. 기존 보안코드 SQL은 다시 실행하지 않습니다. 필사 제목(120자)·내용(50,000자)·자동 작성일을 저장하며 수정 시 작성일은 유지됩니다. 세션 기반 RLS와 수정·삭제 revision 검사를 적용하며 재실행해도 필사를 보존합니다. 운영 DB에는 자동 적용되지 않습니다.
+
 이메일·회원가입 없이 보안코드 하나로 입장합니다. Supabase Data API의 SQL 함수를 사용하며 Supabase Auth 계정이나 Edge Function 배포는 필요하지 않습니다.
 
 ## 할 일 우선순위 업데이트

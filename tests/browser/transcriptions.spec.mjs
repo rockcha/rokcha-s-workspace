@@ -1,0 +1,68 @@
+import { expect, test } from '@playwright/test'
+import { createTranscriptionsDatabase, callTranscriptions } from '../helpers/transcriptions-db.mjs'
+import { routeWorkspaceData } from '../helpers/workspace-data-db.mjs'
+import { testToken } from '../helpers/notes-db.mjs'
+
+let db
+test.beforeEach(async ({ page }) => {
+  db = await createTranscriptionsDatabase()
+  await page.addInitScript(token => sessionStorage.setItem('rokcha.workspace-session', token), testToken)
+  await page.route('https://notes-test.invalid/**', route => route.fulfill({ json: true, headers: { 'access-control-allow-origin': '*' } }))
+  await routeWorkspaceData(page, db)
+  await page.route('**/rpc/manage_transcriptions', async route => {
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' } })
+    const { action, payload } = route.request().postDataJSON()
+    await route.fulfill({ json: await callTranscriptions(db, action, payload), headers: { 'access-control-allow-origin': '*' } })
+  })
+})
+test.afterEach(async () => { await db.close() })
+
+for (const width of [1440, 320]) test(`필사 작성·상세·수정·삭제 및 키보드 ${width}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 1000 })
+  await page.goto('/#/transcriptions')
+  await expect(page.getByText('아직 작성한 필사가 없어요.')).toBeVisible()
+  const nav = await page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link').evaluateAll(links => links.map(link => link.getAttribute('href')))
+  expect(nav.indexOf('#/transcriptions')).toBe(nav.indexOf('#/links') + 1)
+  expect(nav.indexOf('#/vocabulary')).toBe(nav.indexOf('#/transcriptions') + 1)
+  await page.getByRole('link', { name: '추가하기', exact: true }).focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByLabel('제목', { exact: true })).toBeFocused()
+  await page.getByLabel('제목', { exact: true }).fill('마음에 남은 문장')
+  await page.getByLabel('내용', { exact: true }).fill('천천히 걸어도 괜찮다.\n\n나의 속도로 나아가자.')
+  await page.getByRole('button', { name: '저장', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '필사함', exact: true })).toBeFocused()
+  await expect(page.locator('[data-sonner-toast]')).toHaveCount(1)
+  await page.getByRole('list', { name: '필사 목록' }).getByRole('link').focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('article')).toContainText('나의 속도로 나아가자.')
+  const created = await page.getByRole('article').locator('time').textContent()
+  await page.reload()
+  await expect(page.getByRole('article')).toContainText('마음에 남은 문장')
+  await page.getByRole('link', { name: '수정', exact: true }).click()
+  await page.getByLabel('내용', { exact: true }).fill('수정한 문장\n줄바꿈을 간직해요.')
+  await page.getByRole('button', { name: '저장', exact: true }).click()
+  await expect(page.getByRole('article')).toContainText('수정한 문장')
+  await expect(page.getByRole('article').locator('time')).toHaveText(created)
+  await page.screenshot({ path: `test-results/transcriptions-${width}.png`, fullPage: true })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.getByRole('button', { name: '삭제', exact: true }).click()
+  await expect(page.getByRole('button', { name: '취소', exact: true })).toBeFocused()
+  await page.getByRole('button', { name: '취소', exact: true }).click()
+  await expect(page.getByRole('button', { name: '삭제', exact: true })).toBeFocused()
+  await page.getByRole('button', { name: '삭제', exact: true }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: '삭제', exact: true }).click()
+  await expect(page.getByText('아직 작성한 필사가 없어요.')).toBeVisible()
+  await expect(page.locator('[data-sonner-toast]')).toHaveCount(1)
+})
+
+test('저장 실패 시 초안 유지와 없는 상세 안내', async ({ page }) => {
+  await page.goto('/#/transcriptions/missing')
+  await expect(page.getByText('필사를 찾을 수 없어요.', { exact: false })).toBeVisible()
+  await page.goto('/#/transcriptions/new')
+  await page.getByLabel('제목', { exact: true }).fill('보관할 초안')
+  await page.getByLabel('내용', { exact: true }).fill('실패해도 남아 있는 내용')
+  await page.route('**/rpc/manage_transcriptions', route => route.fulfill({ status: 503, json: {} }))
+  await page.getByRole('button', { name: '저장', exact: true }).click()
+  await expect(page.getByRole('main').getByRole('alert')).toBeVisible()
+  await expect(page.getByLabel('내용', { exact: true })).toHaveValue('실패해도 남아 있는 내용')
+})
