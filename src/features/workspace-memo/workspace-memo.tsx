@@ -14,7 +14,7 @@ const emojis = [
   ['🔥', '불꽃'], ['👍', '좋아요'], ['😊', '미소'], ['🎉', '축하'], ['☕', '커피'], ['🍀', '네잎클로버'],
 ] as const
 
-export function WorkspaceMemo({ memo, compact = false, headerDrag, headerAction }: { memo: WorkspaceMemoState; compact?: boolean; headerDrag?: HTMLAttributes<HTMLDivElement>; headerAction?: ReactNode }) {
+function WorkspaceMemo({ memo, headerDrag, headerAction }: { memo: WorkspaceMemoState; headerDrag: HTMLAttributes<HTMLDivElement>; headerAction: ReactNode }) {
   const id = useId()
   const editor = useRef<HTMLTextAreaElement>(null)
   const [emojisOpen, setEmojisOpen] = useState(false)
@@ -32,12 +32,12 @@ export function WorkspaceMemo({ memo, compact = false, headerDrag, headerAction 
   }
 
   return (
-    <section aria-labelledby={id} className={cn('flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-sm', compact ? 'h-[min(42rem,calc(100dvh-8rem))]' : 'min-h-[34rem] lg:h-full')}>
+    <section aria-labelledby={id} className="flex h-[min(42rem,calc(100dvh-8rem))] min-w-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-sm">
       <Collapsible open={emojisOpen} onOpenChange={setEmojisOpen} className="shrink-0 border-b">
-      <div {...headerDrag} className={cn('px-4 py-3 sm:px-6', headerDrag && 'touch-none select-none cursor-grab active:cursor-grabbing')}>
+      <div {...headerDrag} className="cursor-grab touch-none select-none px-4 py-3 active:cursor-grabbing sm:px-6">
         <div className="flex min-h-9 items-center gap-2">
           <PencilLine aria-hidden="true" className="size-5 text-primary" />
-          <h2 id={id} className="min-w-0 text-base sm:text-lg">{headerDrag ? <button type="button" data-memo-drag aria-label="메모장 이동 (드래그 또는 방향키)" className="rounded-md text-left cursor-grab active:cursor-grabbing focus-visible:outline-2 focus-visible:outline-ring">작업실 메모</button> : '작업실 메모'}</h2>
+          <h2 id={id} className="min-w-0 text-base sm:text-lg"><button type="button" data-memo-drag aria-label="메모장 이동 (드래그 또는 방향키)" className="rounded-md text-left cursor-grab active:cursor-grabbing focus-visible:outline-2 focus-visible:outline-ring">작업실 메모</button></h2>
           <CollapsibleTrigger asChild><Button type="button" variant="ghost" size="sm" className="ml-auto gap-1.5 px-2 text-muted-foreground" aria-label={emojisOpen ? '이모지 접기' : '이모지 펼치기'}><Smile aria-hidden="true" className="size-4" /><span className="text-xs">이모지</span><ChevronDown aria-hidden="true" className={cn('size-3.5 transition-transform', emojisOpen && 'rotate-180')} /></Button></CollapsibleTrigger>
           {headerAction}
         </div>
@@ -75,7 +75,7 @@ export function FloatingWorkspaceMemo({ memo }: { memo: WorkspaceMemoState }) {
       <FloatingDialog.Portal>
         <FloatingDialog.Content ref={panel} aria-describedby={undefined} onOpenAutoFocus={event => { event.preventDefault(); panel.current?.querySelector('textarea')?.focus() }} style={position ? { left: `min(${position.x}px, max(12px, calc(100vw - 40rem - 12px)))`, top: `min(${position.y}px, max(12px, calc(100dvh - min(42rem, calc(100dvh - 8rem)) - 14px)))` } : { left: 12, bottom: 84 }} className="fixed z-50 w-[min(40rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border bg-card shadow-xl outline-none">
           <FloatingDialog.Title className="sr-only">작업실 메모장</FloatingDialog.Title>
-          <WorkspaceMemo memo={memo} compact headerDrag={{
+          <WorkspaceMemo memo={memo} headerDrag={{
             onPointerDown: event => {
               if (event.button !== 0 || !event.isPrimary) return
               const control = (event.target as HTMLElement).closest('button')

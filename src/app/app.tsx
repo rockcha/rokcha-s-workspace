@@ -10,6 +10,7 @@ import { NoteDetailPage } from '@/pages/note-detail-page'
 import { LinksPage } from '@/pages/links-page'
 import { TranscriptionsPage } from '@/pages/transcriptions-page'
 import { VocabularyPage } from '@/pages/vocabulary-page'
+import { VocabularyTestPage } from '@/pages/vocabulary-test-page'
 import { NewsPage } from '@/pages/news-page'
 import { WeatherPage } from '@/pages/weather-page'
 import { WorkspacePage } from '@/pages/workspace-page'
@@ -38,7 +39,7 @@ function WorkspaceContent({ page, token, hash, leave, leaving }: { page: string;
     await leave()
   }
   return <AppShell page={page} onLeave={onLeave} leaving={leaving}>
-    {page === 'career-calendar' ? <CareerCalendarPage key={token} token={token} hash={hash} /> : page === 'workspace' ? <WorkspacePage memo={memo} calendar={calendar} todos={todos} /> : page === 'calendar' ? validDate(date) ? <CalendarDayPage key={date} date={date} calendar={calendar} /> : <CalendarPage key={monthKey} calendar={calendar} monthKey={monthKey} /> : page === 'timetable' ? <TimetablePage token={token} /> : page === 'notes' ? noteId ? <NoteDetailPage key={`${token}:${hash}`} token={token} noteId={noteId} folderId={noteFolder} /> : <NotesPage key={noteFolder} token={token} folderId={noteFolder} /> : page === 'transcriptions' ? <TranscriptionsPage key={`${token}:${hash}`} token={token} hash={hash} /> : page === 'vocabulary' ? <VocabularyPage key={token} token={token} /> : page === 'news' ? <NewsPage hash={hash} /> : page === 'weather' ? <WeatherPage /> : <LinksPage token={token} />}
+    {page === 'career-calendar' ? <CareerCalendarPage key={token} token={token} hash={hash} /> : page === 'workspace' ? <WorkspacePage token={token} calendar={calendar} todos={todos} /> : page === 'calendar' ? validDate(date) ? <CalendarDayPage key={date} date={date} calendar={calendar} /> : <CalendarPage key={monthKey} calendar={calendar} monthKey={monthKey} /> : page === 'timetable' ? <TimetablePage token={token} /> : page === 'notes' ? noteId ? <NoteDetailPage key={`${token}:${hash}`} token={token} noteId={noteId} folderId={noteFolder} /> : <NotesPage key={noteFolder} token={token} folderId={noteFolder} /> : page === 'transcriptions' ? <TranscriptionsPage key={`${token}:${hash}`} token={token} hash={hash} /> : page === 'vocabulary' ? hash.split('?')[0] === '#/vocabulary/test' ? <VocabularyTestPage key={token} token={token} /> : <VocabularyPage key={token} token={token} /> : page === 'news' ? <NewsPage hash={hash} /> : page === 'weather' ? <WeatherPage /> : <LinksPage token={token} />}
     <FloatingWorkspaceMemo memo={memo} />
   </AppShell>
 }

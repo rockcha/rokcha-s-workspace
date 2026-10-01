@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
+import { careerCalendarSql, routeCareerEntries, callCareerEntries } from '../helpers/career-calendar-db.mjs'
 import { createWorkspaceDatabase, routeWorkspaceData, failWorkspaceWrites } from '../helpers/workspace-data-db.mjs'
 import { testToken } from '../helpers/notes-db.mjs'
 
@@ -9,7 +11,48 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(token => sessionStorage.setItem('rokcha.workspace-session', token), testToken)
   await page.route('https://notes-test.invalid/**', route => route.fulfill({ json: true, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' } }))
   db = await createWorkspaceDatabase()
+  await db.exec('reset role')
+  await db.exec(careerCalendarSql)
+  await db.exec('set role anon')
   await routeWorkspaceData(page, db)
+  await routeCareerEntries(page, db)
+})
+
+test('다가오는 공고 마감순·지난 공고 제외·시간 갱신·상세 연결', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-10-01T12:00:30') })
+  for (const [title, date, time] of [['내일 공고', '2026-10-02', '18:00'], ['마감된 공고', '2026-10-01', '11:59'], ['곧 마감', '2026-10-01', '12:01']]) {
+    await callCareerEntries(db, 'save', { id: randomUUID(), revision: 0, title, date, time, memo: '', links: [] })
+  }
+  await page.goto('/#/workspace')
+  await page.getByRole('tab', { name: '다가오는 공고', exact: true }).click()
+  const list = page.getByRole('list', { name: '다가오는 공고 목록' })
+  await expect(list.getByRole('link')).toHaveCount(2)
+  await expect(list.getByRole('link').first()).toContainText('곧 마감')
+  await expect(list).toContainText('D-day')
+  await expect(list).toContainText('1분 미만 남음')
+  await expect(list).not.toContainText('마감된 공고')
+  await page.clock.fastForward(60000)
+  await expect(list.getByRole('link')).toHaveCount(1)
+  await list.getByRole('link', { name: /내일 공고/ }).click()
+  await expect(page).toHaveURL(/#\/career-calendar\/2026-10-02$/)
+  await expect(page.getByRole('article', { name: '내일 공고', exact: true })).toBeVisible()
+})
+
+test('공고 조회 실패는 일정·할 일을 막지 않고 재시도 가능', async ({ page }) => {
+  let fail = true
+  await page.route('**/rpc/manage_career_entries', route => {
+    if (!fail || route.request().method() === 'OPTIONS') return route.fallback()
+    return route.fulfill({ status: 503, json: {}, headers: { 'access-control-allow-origin': '*' } })
+  })
+  await page.goto('/#/workspace')
+  await expect(page.getByRole('list', { name: '오늘 일정 목록' })).toBeVisible()
+  await expect(page.getByRole('textbox', { name: '새 할 일' })).toBeEnabled()
+  await page.getByRole('tab', { name: '다가오는 공고', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('취업 일정을 불러오지 못했어요')
+  await expect(page.getByText('마감 예정인 공고가 없어요.')).toHaveCount(0)
+  fail = false
+  await page.getByRole('button', { name: '다시 불러오기' }).click()
+  await expect(page.getByText('마감 예정인 공고가 없어요.')).toBeVisible()
 })
 
 test('작업실 배치와 페이지 간 메모 편집·이모지·새로고침', async ({ page }) => {
@@ -17,13 +60,17 @@ test('작업실 배치와 페이지 간 메모 편집·이모지·새로고침',
   await page.goto('/#/workspace')
   const today = await page.getByRole('region', { name: '오늘 일정', exact: true }).boundingBox()
   const upcoming = await page.getByRole('region', { name: '할 일 리스트' }).boundingBox()
-  const memo = await page.getByRole('region', { name: '작업실 메모', exact: true }).boundingBox()
+  const schedule = await page.getByRole('region', { name: '다가오는 일정', exact: true }).boundingBox()
   expect(today.width).toBe(upcoming.width)
-  expect(upcoming.y).toBeGreaterThan(today.y + today.height)
-  expect(memo.x).toBeGreaterThan(today.x + today.width)
-  expect(Math.abs(memo.width * 2 - today.width)).toBeLessThan(2)
-  expect(memo.height).toBeGreaterThan(today.height)
+  expect(upcoming.y).toBe(today.y)
+  expect(upcoming.x).toBeGreaterThan(today.x + today.width)
+  expect(today.height).toBeLessThan(schedule.height)
+  expect(schedule.y).toBeGreaterThan(today.y + today.height)
+  expect(schedule.y + schedule.height).toBe(upcoming.y + upcoming.height)
+  await expect(page.getByRole('textbox', { name: '작업실 메모 내용' })).toHaveCount(0)
+  await page.getByRole('button', { name: '작업실 메모 열기' }).click()
   await page.getByRole('textbox', { name: '작업실 메모 내용' }).fill('내 작업 메모')
+  await page.getByRole('button', { name: '메모장 닫기' }).click()
   await page.getByRole('link', { name: '캘린더', exact: true }).click()
   await expect(page.getByRole('heading', { name: '캘린더', exact: true })).toBeVisible()
   const trigger = page.getByRole('button', { name: '작업실 메모 열기' })
@@ -53,17 +100,37 @@ test('작업실 배치와 페이지 간 메모 편집·이모지·새로고침',
   await expect(input).toHaveValue('내 💚 메모')
   await page.getByRole('button', { name: '메모장 닫기' }).click()
   await page.getByRole('link', { name: '나의 작업실', exact: true }).click()
+  await expect(input).toHaveCount(0)
+  await trigger.click()
   await expect(input).toHaveValue('내 💚 메모')
+  await page.getByRole('button', { name: '메모장 닫기' }).click()
   await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
   await page.screenshot({ path: 'test-results/workspace-desktop.png', fullPage: true })
+  for (const width of [320, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 1000 })
+    const tabs = page.getByRole('tablist', { name: '일정 보기' })
+    const bounds = await tabs.boundingBox()
+    for (const tab of await tabs.getByRole('tab').all()) {
+      const box = await tab.boundingBox()
+      expect(box.x).toBeGreaterThanOrEqual(bounds.x)
+      expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width)
+      expect(await tab.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
   await page.setViewportSize({ width: 320, height: 740 })
-  for (const [title, link] of [['오늘 일정', '오늘 상세 보기'], ['다가오는 일정', '캘린더 보기']]) {
+  const mobileSchedule = await page.getByRole('region', { name: '오늘 일정', exact: true }).boundingBox()
+  const mobileTodos = await page.getByRole('region', { name: '할 일 리스트' }).boundingBox()
+  expect(mobileTodos.y).toBeGreaterThan(mobileSchedule.y + mobileSchedule.height)
+  for (const [title, link] of [['다가오는 일정', '캘린더 보기'], ['다가오는 공고', '취업 캘린더 보기']]) {
     await page.getByRole('tab', { name: title, exact: true }).click()
     const region = page.getByRole('region', { name: title, exact: true })
     const heading = await region.getByRole('tablist').boundingBox()
     const button = await region.getByRole('link', { name: link }).boundingBox()
     expect(button.y).toBeGreaterThanOrEqual(heading.y)
     expect(button.x + button.width).toBeLessThanOrEqual(320)
+    await expect(page.getByRole('list', { name: '오늘 일정 목록' })).toBeVisible()
+    await expect(page.getByRole('region', { name: '오늘 노트 내용' })).toBeVisible()
   }
   await trigger.click()
   const popup = page.getByRole('dialog', { name: '작업실 메모장' })
@@ -78,6 +145,7 @@ test('작업실 배치와 페이지 간 메모 편집·이모지·새로고침',
 test('저장 실패 시 초안을 유지하고 실패 안내', async ({ page }) => {
   await page.goto('/#/workspace')
   await failWorkspaceWrites(page)
+  await page.getByRole('button', { name: '작업실 메모 열기' }).click()
   await page.getByRole('textbox', { name: '작업실 메모 내용' }).fill('보관할 초안')
   await expect(page.getByRole('status')).toContainText('저장하지 못했어요')
   await expect(page.getByRole('textbox', { name: '작업실 메모 내용' })).toHaveValue('보관할 초안')
@@ -85,10 +153,14 @@ test('저장 실패 시 초안을 유지하고 실패 안내', async ({ page }) 
 
 test('일정 키보드 전환과 할 일 추가·수정·완료·삭제·실패 복구', async ({ page }) => {
   await page.goto('/#/workspace')
-  await page.getByRole('tab', { name: '오늘 일정', exact: true }).focus()
-  await page.keyboard.press('ArrowRight')
+  await expect(page.getByRole('tab')).toHaveCount(2)
+  await page.getByRole('tab', { name: '다가오는 일정', exact: true }).focus()
   await expect(page.getByRole('tab', { name: '다가오는 일정', exact: true })).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('tabpanel', { name: '오늘 일정', exact: true })).toBeHidden()
+  await page.keyboard.press('ArrowRight')
+  await expect(page.getByRole('tab', { name: '다가오는 공고', exact: true })).toBeFocused()
+  await expect(page.getByRole('tabpanel', { name: '다가오는 공고', exact: true })).toBeVisible()
+  await expect(page.getByRole('list', { name: '오늘 일정 목록' })).toBeVisible()
+  await expect(page.getByRole('region', { name: '오늘 노트 내용' })).toBeVisible()
   const input = page.getByRole('textbox', { name: '새 할 일' })
   await input.fill('수업 준비')
   await page.getByRole('button', { name: '할 일 추가', exact: true }).click()
@@ -99,8 +171,10 @@ test('일정 키보드 전환과 할 일 추가·수정·완료·삭제·실패 
   await page.getByRole('button', { name: '수정 저장' }).click()
   await expect(page.getByRole('button', { name: '교재 준비 수정' })).toBeFocused()
   await page.getByRole('checkbox', { name: '교재 준비 완료' }).click()
+  await page.getByRole('button', { name: '완료한 일', exact: true }).click()
   await expect(page.getByRole('checkbox', { name: '교재 준비 완료' })).toBeChecked()
   await page.reload()
+  await page.getByRole('button', { name: '완료한 일', exact: true }).click()
   await expect(page.getByRole('checkbox', { name: '교재 준비 완료' })).toBeChecked()
   await page.setViewportSize({ width: 320, height: 740 })
   await page.getByRole('button', { name: '교재 준비 수정' }).click()

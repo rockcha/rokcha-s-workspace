@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Layers, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
@@ -24,7 +24,7 @@ export function VocabularyPage({ token }: { token: string }) {
   const selectedWord = words.find(item => item.id === selectedId)
   return <section aria-labelledby="vocabulary-title">
     <PageHeader>
-      <div className="flex flex-wrap items-center justify-between gap-3"><h1 id="vocabulary-title" className="flex items-center gap-3 text-3xl tracking-tight"><span aria-hidden="true" className="shrink-0 text-2xl">📖</span>영단어 공부방</h1><Button ref={addButton} disabled={state.loading || state.busy || !!state.error} onClick={() => edit()}><Plus aria-hidden="true" />단어 추가</Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h1 id="vocabulary-title" className="flex items-center gap-3 text-3xl tracking-tight"><span aria-hidden="true" className="shrink-0 text-2xl">📖</span>영단어 공부방</h1><div className="flex flex-wrap gap-2"><Button asChild variant="outline"><a href="#/vocabulary/test"><Layers aria-hidden="true" />단어 테스트</a></Button><Button ref={addButton} disabled={state.loading || state.busy || !!state.error} onClick={() => edit()}><Plus aria-hidden="true" />단어 추가</Button></div></div>
       <div className="-mx-1 mt-4 flex flex-wrap items-center gap-3 p-1"><Input className="max-w-sm bg-card focus-visible:ring-inset" aria-label="단어 검색" placeholder="단어 검색" value={query} onChange={event => setQuery(event.target.value)} /><label className="ml-auto flex shrink-0 cursor-pointer items-center gap-2 text-sm"><Switch checked={hideMeanings} onCheckedChange={setHideMeanings} aria-label="단어 가리기 모드" />단어 가리기 모드</label></div>
     </PageHeader>
     {state.loading ? <p role="status">단어를 불러오는 중…</p> : state.error ? <div role="alert" className="text-sm text-destructive">{state.error} <Button variant="ghost" size="sm" onClick={state.refresh}>다시 시도</Button></div> : <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">

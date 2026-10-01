@@ -12,7 +12,7 @@ const filters = [
   { id: 'completed', label: '완료한 일', empty: '아직 완료한 일이 없어요.' },
 ] as const
 
-export function TodoList({ todos }: { todos: TodosState }) {
+export function TodoList({ todos, className }: { todos: TodosState; className?: string }) {
   const [filter, setFilter] = useState<(typeof filters)[number]['id']>('active')
   const [title, setTitle] = useState('')
   const [editing, setEditing] = useState<Todo | null>(null)
@@ -39,7 +39,7 @@ export function TodoList({ todos }: { todos: TodosState }) {
     setDeletingAll(null)
     setDeleteAllFailed(false)
   }
-  return <section aria-labelledby="todos-title" className="flex h-96 min-h-0 flex-col rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
+  return <section aria-labelledby="todos-title" className={cn('flex h-96 min-h-0 flex-col rounded-2xl border bg-card p-4 shadow-sm sm:p-6', className)}>
     <div className="flex items-center gap-2">
       <ListTodo className="size-5 text-primary" strokeWidth={1.5} aria-hidden="true" />
       <h2 id="todos-title" className="text-base sm:text-lg">할 일 리스트</h2>

@@ -4,7 +4,7 @@
 
 필사함은 `pages/transcriptions-page.tsx`의 목록·상세·별도 작성/수정 화면과 `features/transcriptions/api.ts`로 구성합니다. 경로는 `#/transcriptions`, `#/transcriptions/new`, `#/transcriptions/<id>`, `#/transcriptions/<id>/edit`입니다. `supabase/transcriptions.sql`은 독립 테이블과 `manage_transcriptions` RPC를 만들며 세션 검증·RLS·직접 쓰기 차단·revision 충돌 검사를 적용합니다. 작성일 내림차순으로 조회하고 수정 시 작성일과 본문 줄바꿈을 보존합니다.
 
-영단어 공부방은 `pages/vocabulary-page.tsx`, 모델·편집기·저장은 `features/vocabulary/`에 둡니다. `supabase/vocabulary.sql`의 `vocabulary_words`와 `manage_vocabulary` RPC가 세션 검증, RLS, revision 충돌 검사, 품사·뜻 검증을 적용합니다. 검색은 영단어만 비교하고, 가리기 모드는 페이지 상태로 관리하며 상세의 품사·뜻을 렌더링하지 않습니다. 이전 테스트 주소로 들어와도 단어장을 표시합니다. 저장 실패 시 편집 내용을 유지합니다.
+영단어 공부방은 `pages/vocabulary-page.tsx`, 모델·편집기·저장은 `features/vocabulary/`에 둡니다. `supabase/vocabulary.sql`의 `vocabulary_words`와 `manage_vocabulary` RPC가 세션 검증, RLS, revision 충돌 검사, 품사·뜻 검증을 적용합니다. 검색은 영단어만 비교하고, 가리기 모드는 페이지 상태로 관리하며 상세의 품사·뜻을 렌더링하지 않습니다. `pages/vocabulary-test-page.tsx`는 `#/vocabulary/test`에서 기존 useVocabulary로 저장된 단어 전체를 읽어 알파벳순으로 보여줍니다. 카드 위치·뜻 공개 여부는 페이지 상태이며 이동할 때 뜻을 다시 숨깁니다. 테스트는 읽기 전용이고 새로고침 시 처음부터 시작합니다. 저장 실패 시 편집 내용을 유지합니다.
 
 ```text
 src/
@@ -32,7 +32,7 @@ src/
   lib/folder-tree.ts           # 공통 폴더 경로·계층 구성
   config/site.ts               # 앱 이름·소개
   lib/utils.ts                 # cn(): clsx + tailwind-merge
-  pages/workspace-page.tsx     # 오늘 일정·노트, 다가오는 일정 D-day, 작업실 메모장
+  pages/workspace-page.tsx     # 오늘 일정·노트, 다가오는 일정·공고 D-day, 할 일 리스트
   pages/calendar-page.tsx      # 월간 캘린더·날짜 상세 진입
   pages/calendar-day-page.tsx  # 하루의 일정 목록·단일 노트, 편집·삭제
   pages/timetable-page.tsx    # 월–일 시간 격자와 수업 편집 진입
@@ -113,4 +113,4 @@ components/layout/page-header.tsx는 각 화면에서 재사용하는 고정 헤
 
 할 일은 features/todos의 useTodos와 TodoList로 구성합니다. 기존 useCollection과 manage_workspace_data의 todo_list/save/delete/reorder/delete_all을 재사용하며 workspace_todos 테이블에 저장합니다. priority 오름차순으로 조회하고 새 항목은 잠금 안에서 최대 priority + 1을 배정합니다. 완료·제목 수정은 순서를 바꾸지 않습니다. 순서 변경과 전체 삭제는 전체 항목의 ID·revision·개수·중복을 검증한 뒤 하나의 트랜잭션으로 적용합니다. 순위가 바뀐 행의 revision을 올리며 전체 삭제에는 confirmed: true가 필요합니다. 다른 기기의 추가·삭제·수정 이후 오래된 요청은 충돌로 거부합니다. 세션 기반 RLS와 직접 쓰기 차단을 유지합니다.
 
-use-todo-reorder.ts는 Pointer Events 기반 마우스·터치 드래그, 목록 가장자리 자동 스크롤, Escape 취소와 키보드 이동을 처리합니다. order.ts는 필터로 숨긴 항목의 자리를 유지하며 보이는 항목만 재배치합니다. 드래그 중에는 삽입 위치를 표시하고 서버 저장 성공 후 실제 순서를 반영하므로 실패 시 기존 순서를 유지합니다. 작업실 상단 일정 카드는 Radix Tabs로 오늘 일정·다가오는 일정을 전환하고 아래에는 할 일 리스트를 배치합니다.
+use-todo-reorder.ts는 Pointer Events 기반 마우스·터치 드래그, 목록 가장자리 자동 스크롤, Escape 취소와 키보드 이동을 처리합니다. order.ts는 필터로 숨긴 항목의 자리를 유지하며 보이는 항목만 재배치합니다. 드래그 중에는 삽입 위치를 표시하고 서버 저장 성공 후 실제 순서를 반영하므로 실패 시 기존 순서를 유지합니다. 작업실 왼쪽 위의 오늘 일정·노트 카드는 항상 표시하며, 아래의 Radix Tabs는 다가오는 일정·다가오는 공고만 전환합니다. 왼쪽 카드 묶음과 오른쪽 할 일 리스트의 너비와 전체 높이를 맞춥니다. WorkspacePage에서 useCareerCalendar로 취업 일정을 조회하고 공고 탭에서만 조회 상태·실패·재시도를 표시합니다. 마감 전 항목을 날짜·시간순으로 정렬하며 기존 30초·화면 복귀 갱신으로 지난 공고를 제외합니다. 작업실 메모는 앱 공통 FloatingWorkspaceMemo에서만 표시합니다.
