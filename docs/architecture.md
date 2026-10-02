@@ -1,5 +1,7 @@
 # 파일 구조와 확장 기준
 
+사이드바의 일정·자료·공부·정보 그룹은 `components/layout/app-shell.tsx`에서 접힘 상태를 관리합니다. 접힌 그룹 이름을 localStorage의 `rokcha-workspace-navigation-collapsed` 키에 저장하여 새로고침·재방문 시 복원합니다. 저장 기록이 없거나 손상된 경우 모두 펼치며, 저장소 접근이 차단되어도 메뉴 조작은 유지합니다.
+
 취업 캘린더는 `pages/career-calendar-page.tsx`의 월간·날짜 상세 화면과 `features/career-calendar/`의 API·상태·편집기로 구성합니다. 경로는 `#/career-calendar?month=YYYY-MM`, `#/career-calendar/YYYY-MM-DD`입니다. `supabase/career-calendar.sql`은 독립적인 `career_entries` 테이블과 `manage_career_entries` RPC를 생성합니다. 마감 날짜·HH:mm 시간은 필수이며 종일 일정은 없습니다. 날짜·시각은 기존 캘린더처럼 입력한 값을 보존하고 시간대 변환은 하지 않습니다. 링크는 이름과 HTTP(S) 주소를 가진 배열로 보관하며 수정·삭제에 revision을 검사합니다. 신규 일정은 클라이언트 UUID를 고정해 동일 요청으로 중복 생성하지 않습니다. 세션 기반 RLS와 직접 쓰기 차단을 적용합니다. 공통 URL 검증은 `lib/web-url.ts`에서 링크함과 함께 사용합니다.
 
 필사함은 `pages/transcriptions-page.tsx`의 목록·상세·별도 작성/수정 화면과 `features/transcriptions/api.ts`로 구성합니다. 경로는 `#/transcriptions`, `#/transcriptions/new`, `#/transcriptions/<id>`, `#/transcriptions/<id>/edit`입니다. `supabase/transcriptions.sql`은 독립 테이블과 `manage_transcriptions` RPC를 만들며 세션 검증·RLS·직접 쓰기 차단·revision 충돌 검사를 적용합니다. 작성일 내림차순으로 조회하고 수정 시 작성일과 본문 줄바꿈을 보존합니다.
