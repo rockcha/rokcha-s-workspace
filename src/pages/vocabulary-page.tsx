@@ -30,7 +30,7 @@ export function VocabularyPage({ token }: { token: string }) {
     {state.loading ? <p role="status">단어를 불러오는 중…</p> : state.error ? <div role="alert" className="text-sm text-destructive">{state.error} <Button variant="ghost" size="sm" onClick={state.refresh}>다시 시도</Button></div> : <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
       {words.length ? <ul aria-label="영단어 목록" className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,8rem),1fr))] gap-2">
         {words.map(item => <li key={item.id} className="min-w-0">
-          <Button variant="outline" disabled={state.busy} aria-pressed={selectedWord?.id === item.id} aria-controls="vocabulary-detail" className={cn('h-full min-h-14 w-full justify-start whitespace-normal break-all px-4 py-3 text-left text-base font-normal', selectedWord?.id === item.id && 'border-primary bg-accent text-accent-foreground')} onClick={() => {
+          <Button disabled={state.busy} aria-pressed={selectedWord?.id === item.id} aria-controls="vocabulary-detail" className={cn('h-full min-h-14 w-full justify-start whitespace-normal break-all px-4 py-3 text-left text-base font-normal', selectedWord?.id === item.id && 'ring-2 ring-primary ring-offset-2 ring-offset-background')} onClick={() => {
             setSelectedId(item.id)
             requestAnimationFrame(() => detailTitle.current?.focus())
           }}>{item.word}</Button>

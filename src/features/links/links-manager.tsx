@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/layout/page-header'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronRight, FolderInput, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ChevronRight, FolderInput, FolderPlus, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,8 @@ export function LinksManager({ token }: { token: string }) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [retry, setRetry] = useState(0)
+  const [query, setQuery] = useState('')
+  const search = query.trim().toLocaleLowerCase()
   const [filter, setFilter] = useState('all')
   const [editor, setEditor] = useState<Editor | null>(null)
   const [removal, setRemoval] = useState<Removal | null>(null)
@@ -121,7 +123,7 @@ export function LinksManager({ token }: { token: string }) {
   const currentFolder = folderTree.find(folder => folder.id === filter)
   const breadcrumbs = currentFolder ? [...currentFolder.ancestors, currentFolder.id].map(id => folderTree.find(folder => folder.id === id)!) : []
   const visibleFolders = folderTree.filter(folder => (folder.parent_id ?? null) === (filter === 'all' ? null : filter))
-  const visibleLinks = data.links.filter(link => link.folder_id === filter)
+  const visibleLinks = data.links.filter(link => search ? link.title.toLocaleLowerCase().includes(search) : link.folder_id === filter)
   const removedFolders = new Set(removal?.kind === 'folder' ? folderTree.filter(folder => folder.id === removal.id || folder.ancestors.includes(removal.id)).map(folder => folder.id) : [])
   const removedLinks = data.links.filter(link => removedFolders.has(link.folder_id)).length
 
@@ -168,8 +170,13 @@ export function LinksManager({ token }: { token: string }) {
         </nav>
         <div className="flex items-center gap-3 text-xs text-muted-foreground"><span>폴더 {visibleFolders.length}개{currentFolder && ` · 링크 ${visibleLinks.length}개`}</span><Button type="button" size="sm" variant="ghost" disabled={loading} onClick={() => setRetry(value => value + 1)}>새로고침</Button></div>
       </div>
+      <div className="relative mt-4 w-full sm:max-w-sm">
+        <label htmlFor="links-search" className="sr-only">링크 제목 검색</label>
+        <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input id="links-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="제목으로 검색" className="pl-9" />
+      </div>
       </PageHeader>
-      {loading ? <p role="status" className="py-16 text-center text-sm text-muted-foreground">링크함을 불러오고 있어요.</p> : loadError ? <div role="alert" className="py-12 text-center"><p className="text-sm text-destructive">{loadError}</p><Button type="button" variant="outline" className="mt-4" onClick={() => setRetry(value => value + 1)}>다시 시도</Button></div> : !data.folders.length ? <div className="py-20 text-center"><span className="text-3xl" aria-hidden="true">📁</span><h2 className="mt-4 text-lg">첫 폴더를 만들어 보세요</h2><p className="mt-2 text-sm text-muted-foreground">폴더를 만든 뒤 그 안에 링크를 담을 수 있어요.</p><Button type="button" variant="outline" className="mt-5" onClick={() => openFolder()}>폴더 추가</Button></div> : (
+      {loading ? <p role="status" className="py-16 text-center text-sm text-muted-foreground">링크함을 불러오고 있어요.</p> : loadError ? <div role="alert" className="py-12 text-center"><p className="text-sm text-destructive">{loadError}</p><Button type="button" variant="outline" className="mt-4" onClick={() => setRetry(value => value + 1)}>다시 시도</Button></div> : search ? <div className="mt-5 space-y-4"><p role="status" className="text-sm text-muted-foreground">검색 결과 {visibleLinks.length}개</p>{visibleLinks.length ? linkList(visibleLinks) : <p className="py-12 text-center text-sm text-muted-foreground">검색 결과가 없어요. 다른 제목으로 검색해 주세요.</p>}</div> : !data.folders.length ? <div className="py-20 text-center"><span className="text-3xl" aria-hidden="true">📁</span><h2 className="mt-4 text-lg">첫 폴더를 만들어 보세요</h2><p className="mt-2 text-sm text-muted-foreground">폴더를 만든 뒤 그 안에 링크를 담을 수 있어요.</p><Button type="button" variant="outline" className="mt-5" onClick={() => openFolder()}>폴더 추가</Button></div> : (
         <div className="mt-5 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {visibleFolders.map(folder => (

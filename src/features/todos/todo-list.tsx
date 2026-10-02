@@ -46,7 +46,7 @@ export function TodoList({ todos, className }: { todos: TodosState; className?: 
       <Button type="button" variant="destructive-ghost" size="sm" disabled={interacting || !!editing || todos.items.length === 0} onClick={event => { deleteTrigger.current = event.currentTarget; setDeleteAllFailed(false); setDeletingAll([...todos.items]) }} className="ml-auto h-8 shrink-0 gap-1.5 px-2 text-xs"><Trash2 aria-hidden="true" className="size-3.5" />전체 삭제</Button>
     </div>
     <div role="group" aria-label="할 일 필터" className="mt-3 flex shrink-0 gap-1 rounded-xl bg-secondary/60 p-1">
-      {filters.map(({ id, label }) => <Button key={id} type="button" variant="ghost" size="sm" aria-pressed={filter === id} disabled={todos.busy || !!order.dragging || !!editing} onClick={() => setFilter(id)} className={cn('h-8 min-w-0 flex-1 gap-1 rounded-lg px-1 text-xs text-muted-foreground', filter === id && 'bg-card text-primary shadow-sm hover:bg-card')}>
+      {filters.map(({ id, label }) => <Button key={id} type="button" variant={filter === id ? 'default' : 'ghost'} size="sm" aria-pressed={filter === id} disabled={todos.busy || !!order.dragging || !!editing} onClick={() => setFilter(id)} className={cn('h-8 min-w-0 flex-1 gap-1 rounded-lg px-1 text-xs text-muted-foreground', filter === id ? 'text-primary-foreground shadow-sm' : 'text-muted-foreground')}>
         {label}<span aria-hidden="true" className="text-[10px] tabular-nums opacity-70">{filterCounts[id]}</span>
       </Button>)}
     </div>

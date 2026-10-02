@@ -31,6 +31,31 @@ test.describe('링크함', () => {
   test.afterEach(async () => { await db.close() })
 
   for (const width of [320, 1440]) {
+    test(width + 'px 전체 폴더 제목 검색과 초기화', async ({ page }) => {
+      await page.setViewportSize({ width, height: 960 })
+      const root = (await callLinks(db, 'list')).folders[0]
+      await callLinks(db, 'create_folder', { name: '검색 하위 폴더', parent_id: root.id })
+      const child = (await callLinks(db, 'list')).folders.find(folder => folder.name === '검색 하위 폴더')
+      await callLinks(db, 'create_link', { folder_id: child.id, title: 'Green Tea 기록', content: '본문 전용 검색어', url: 'https://example.com/article', image_url: '', })
+      await page.goto('/#/links')
+      const search = page.getByRole('searchbox', { name: '링크 제목 검색' })
+      await search.focus()
+      await expect(search).toBeFocused()
+      await search.fill('  green TEA  ')
+      await expect(page.getByRole('status')).toHaveText('검색 결과 1개')
+      await expect(page.locator('main ul')).toContainText('Green Tea 기록')
+      await search.fill('본문 전용 검색어')
+      await expect(page.getByRole('status')).toHaveText('검색 결과 0개')
+      await expect(page.getByText('검색 결과가 없어요. 다른 제목으로 검색해 주세요.')).toBeVisible()
+      await search.fill('')
+      await expect(page.locator('button[id^="folder-title-"]')).toHaveCount(1)
+      await expect(page.locator('main ul')).toHaveCount(0)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+      await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
+    })
+  }
+
+  for (const width of [320, 1440]) {
     test(width + 'px 폴더 탐색, 이미지 카드, 새 탭, 편집·이동·삭제', async ({ page }) => {
       await page.setViewportSize({ width, height: 960 })
       await page.goto('/#/links')

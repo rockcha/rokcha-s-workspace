@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { Clock3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,7 @@ const minutes = Array.from({ length: 60 }, (_, index) => String(index).padStart(
 
 export function TimePicker({ label, value, onChange, disabled, optional = false }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; optional?: boolean }) {
   const id = useId()
+  const pointerFocus = useRef(false)
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState<string | null>(null)
   const [rawHour, rawMinute] = value.split(':')
@@ -20,7 +21,7 @@ export function TimePicker({ label, value, onChange, disabled, optional = false 
     <label htmlFor={id} className="text-sm">{label}</label>
     <Popover open={open} onOpenChange={setOpen}>
       <div className="relative">
-        <Input id={id} ref={element => { element?.setCustomValidity(normalizeTimeInput(value) === null ? '시간을 확인해 주세요. 예: 9, 930, 14:30, 오후 1시' : '') }} value={input ?? value} onChange={event => { const next = event.target.value; setInput(next); onChange(normalizeTimeInput(next) ?? next) }} onBlur={() => setInput(null)} disabled={disabled} required={!optional} type="text" inputMode="text" maxLength={20} placeholder={optional ? '비워 두면 종일' : '예: 9 또는 930'} className="h-10 bg-card pr-11 tabular-nums" />
+        <Input id={id} ref={element => { element?.setCustomValidity(normalizeTimeInput(value) === null ? '시간을 확인해 주세요. 예: 9, 930, 14:30, 오후 1시' : '') }} value={input ?? value} onChange={event => { const next = event.target.value; setInput(next); onChange(normalizeTimeInput(next) ?? next) }} onPointerDown={() => { pointerFocus.current = true }} onFocus={event => { if (!pointerFocus.current) event.currentTarget.select() }} onClick={event => { pointerFocus.current = false; const element = event.currentTarget; if (/^\d{2}:\d{2}$/.test(element.value)) { const position = element.selectionStart ?? 0; element.setSelectionRange(position <= 2 ? 0 : 3, position <= 2 ? 2 : 5) } }} onBlur={() => { pointerFocus.current = false; setInput(null) }} disabled={disabled} required={!optional} type="text" inputMode="numeric" maxLength={20} placeholder={optional ? '예: 930 (비워 두면 종일)' : '예: 930 또는 1430'} className="h-10 bg-card pr-11 tabular-nums" />
         <PopoverTrigger asChild><Button type="button" variant="ghost" size="icon" disabled={disabled} aria-label={`${label} 선택 열기`} className="absolute top-1 right-1 size-8 text-muted-foreground"><Clock3 aria-hidden="true" className="size-4" /></Button></PopoverTrigger>
       </div>
       <PopoverContent align="start" collisionPadding={12} aria-label={`${label} 선택`} className="w-64 max-w-[calc(100vw-1.5rem)] space-y-3">

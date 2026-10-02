@@ -35,6 +35,31 @@ test.describe('메모함', () => {
 
   test.afterEach(async () => { await db.close() })
 
+  for (const width of [320, 1440]) {
+    test(width + 'px 전체 폴더 제목 검색과 초기화', async ({ page }) => {
+      await page.setViewportSize({ width, height: 960 })
+      const root = (await callNotes(db, 'list')).folders[0]
+      await callNotes(db, 'create_folder', { name: '검색 하위 폴더', parent_id: root.id })
+      const child = (await callNotes(db, 'list')).folders.find(folder => folder.name === '검색 하위 폴더')
+      await callNotes(db, 'create_note', { folder_id: child.id, title: 'Green Tea 기록', content: '본문 전용 검색어',  })
+      await page.goto('/#/notes')
+      const search = page.getByRole('searchbox', { name: '메모 제목 검색' })
+      await search.focus()
+      await expect(search).toBeFocused()
+      await search.fill('  green TEA  ')
+      await expect(page.getByRole('status')).toHaveText('검색 결과 1개')
+      await expect(page.locator('main ul')).toContainText('Green Tea 기록')
+      await search.fill('본문 전용 검색어')
+      await expect(page.getByRole('status')).toHaveText('검색 결과 0개')
+      await expect(page.getByText('검색 결과가 없어요. 다른 제목으로 검색해 주세요.')).toBeVisible()
+      await search.fill('')
+      await expect(page.locator('button[id^="folder-title-"]')).toHaveCount(1)
+      await expect(page.locator('main ul')).toHaveCount(0)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+      await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
+    })
+  }
+
   test('폴더 트리 선택, 내부 탐색, 배경 클릭 닫기', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 740 })
     const root = (await callNotes(db, 'list')).folders[0]

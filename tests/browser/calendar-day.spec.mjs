@@ -1,8 +1,59 @@
 import { expect, test } from '@playwright/test'
-import { createWorkspaceDatabase, routeWorkspaceData, failWorkspaceWrites } from '../helpers/workspace-data-db.mjs'
+import { createWorkspaceDatabase, routeWorkspaceData, failWorkspaceWrites, callWorkspaceData } from '../helpers/workspace-data-db.mjs'
 import { testToken } from '../helpers/notes-db.mjs'
 
 let db
+test('시간의 시·분을 숫자로 덮어쓰고 연속 숫자로 입력', async ({ page }) => {
+  await page.goto('/#/calendar/2026-12-31')
+  await page.getByRole('button', { name: '일정 추가', exact: true }).click()
+  await page.getByLabel('제목', { exact: true }).fill('숫자 시간 입력')
+  const time = page.getByLabel('시간 (선택)', { exact: true })
+  await time.fill('1430')
+  await time.press('Tab')
+  await expect(time).toHaveValue('14:30')
+  await time.click({ position: { x: 20, y: 20 } })
+  expect(await time.evaluate(element => element.value.slice(element.selectionStart, element.selectionEnd))).toBe('14')
+  await page.keyboard.type('9')
+  await time.press('Tab')
+  await expect(time).toHaveValue('09:30')
+  await time.click({ position: { x: 52, y: 20 } })
+  expect(await time.evaluate(element => element.value.slice(element.selectionStart, element.selectionEnd))).toBe('30')
+  await page.keyboard.type('45')
+  await time.press('Tab')
+  await expect(time).toHaveValue('09:45')
+  await time.focus()
+  await page.keyboard.type('1835')
+  await page.getByRole('button', { name: '저장', exact: true }).click()
+  await expect(page.getByRole('dialog')).toBeHidden()
+  await expect.poll(async () => (await callWorkspaceData(db, 'calendar_list')).find(entry => entry.title === '숫자 시간 입력')?.time).toBe('18:35')
+})
+test('저장 중 추가 입력과 날짜 이동에도 최신 초안 저장', async ({ page }) => {
+  let saving = false
+  await page.route('https://notes-test.invalid/**/manage_workspace_data', async route => {
+    const request = route.request()
+    if (request.method() !== 'OPTIONS' && request.postDataJSON().action === 'calendar_save') {
+      saving = true
+      await new Promise(resolve => setTimeout(resolve, 700))
+    }
+    return route.fallback()
+  })
+  await page.goto('/#/calendar/2026-12-31')
+  const content = page.getByLabel('오늘의 노트 내용')
+  await content.fill('첫 번째 초안')
+  await expect.poll(() => saving).toBe(true)
+  await expect(content).toBeEnabled()
+  await content.fill('저장 중 수정한 최신 내용')
+  await page.getByRole('link', { name: '월간 캘린더', exact: true }).click()
+  await page.getByRole('link', { name: '2026-12-30 상세 보기', exact: true }).click()
+  await content.fill('다른 날짜의 노트')
+  await expect.poll(async () => (await callWorkspaceData(db, 'calendar_list')).filter(entry => entry.type === 'note').map(entry => [entry.date, entry.content]).sort()).toEqual([
+    ['2026-12-30', '다른 날짜의 노트'],
+    ['2026-12-31', '저장 중 수정한 최신 내용'],
+  ])
+  await page.reload()
+  await expect(content).toHaveValue('다른 날짜의 노트')
+  await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
+})
 test.afterEach(async () => { await db.close() })
 
 test.beforeEach(async ({ page }) => {
@@ -55,7 +106,7 @@ test('날짜 상세·여러 일정·노트 직접 편집·날짜별 분리·시�
   }
   await expect(page.getByLabel('제목', { exact: true })).toHaveCount(0)
   await page.getByLabel('오늘의 노트 내용', { exact: true }).fill('휴강 안내\n' + '긴 노트 내용\n'.repeat(30))
-  await page.getByRole('button', { name: '노트 저장', exact: true }).click()
+  await expect(page.getByRole('region', { name: '오늘의 노트', exact: true }).getByRole('status')).toHaveText('자동 저장됨')
   await expect(page.getByLabel('오늘의 노트 내용')).toBeFocused()
   await expect(page.locator('[data-sonner-toast]')).toHaveCount(1)
   await expect(page.getByRole('button', { name: '노트 추가', exact: true })).toHaveCount(0)
@@ -82,13 +133,13 @@ test('날짜 상세·여러 일정·노트 직접 편집·날짜별 분리·시�
   await expect(page.getByRole('heading', { name: /2026. 12. 31/ })).toBeVisible()
   await page.goto('/#/calendar/2027-01-01')
   await page.getByLabel('오늘의 노트 내용', { exact: true }).fill('다음 날 노트')
-  await page.getByRole('button', { name: '노트 저장', exact: true }).click()
+  await expect(page.getByRole('region', { name: '오늘의 노트', exact: true }).getByRole('status')).toHaveText('자동 저장됨')
   await page.setViewportSize({ width: 320, height: 740 })
   await page.screenshot({ path: 'test-results/day-detail-mobile.png', fullPage: true })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
 
-test('기존 노트 제목 보존, 내용만 수정·저장·삭제', async ({ page }) => {
+test('기존 노트 제목 보존, 자동 저장과 내용 비우기', async ({ page }) => {
   await page.goto('/#/calendar/2026-12-31')
   await page.evaluate(() => localStorage.setItem('rokcha.calendar', JSON.stringify([{ id: crypto.randomUUID(), type: 'note', date: '2026-12-31', time: '', title: '기존 제목', content: '기존 내용' }])))
   await page.reload()
@@ -99,9 +150,9 @@ test('기존 노트 제목 보존, 내용만 수정·저장·삭제', async ({ p
   const content = dialog.getByLabel('오늘의 노트 내용', { exact: true })
   await expect(content).toHaveValue('기존 제목\n\n기존 내용')
   await content.fill('   ')
-  await expect(dialog.getByRole('button', { name: '노트 저장', exact: true })).toBeDisabled()
+  await expect(dialog.getByRole('status')).toHaveText('자동 저장됨')
   await content.fill('이날은 수업 없음\n교재 확인하기')
-  await dialog.getByRole('button', { name: '노트 저장', exact: true }).click()
+  await expect(dialog.getByRole('status')).toHaveText('자동 저장됨')
   await expect(content).toBeFocused()
   await page.reload()
   await expect(content).toHaveValue('이날은 수업 없음\n교재 확인하기')
@@ -110,10 +161,11 @@ test('기존 노트 제목 보존, 내용만 수정·저장·삭제', async ({ p
   await page.setViewportSize({ width: 320, height: 740 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.screenshot({ path: 'test-results/note-content-mobile.png', fullPage: true })
-  await dialog.getByRole('button', { name: '노트 삭제', exact: true }).click()
-  await page.getByRole('button', { name: '삭제 확인', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: '노트 삭제', exact: true })).toHaveCount(0)
+  await content.fill('')
+  await expect(dialog.getByRole('status')).toHaveText('자동 저장됨')
+  await page.reload()
   await expect(content).toHaveValue('')
-  await expect(content).toBeFocused()
 })
 
 test('노트 저장 실패 시 초안 유지 및 재시도', async ({ page }) => {
@@ -121,16 +173,13 @@ test('노트 저장 실패 시 초안 유지 및 재시도', async ({ page }) =>
   await failWorkspaceWrites(page)
   const content = page.getByLabel('오늘의 노트 내용')
   await content.fill('실패해도 보관할 노트')
-  await content.press('Tab')
-  await expect(page.getByRole('button', { name: '노트 저장' })).toBeFocused()
-  await page.keyboard.press('Enter')
-  await expect(page.locator('[data-sonner-toast]')).toContainText('저장하지 못했어요')
+  await expect(page.getByRole('region', { name: '오늘의 노트', exact: true }).getByRole('alert')).toContainText('저장하지 못했어요')
   await expect(content).toHaveValue('실패해도 보관할 노트')
-  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '노트 저장' })).toHaveCount(0)
   await routeWorkspaceData(page, db)
-  await page.getByRole('button', { name: '노트 저장' }).click()
-  await expect(content).toBeFocused()
-  await expect(page.locator('[data-sonner-toast]')).toHaveCount(1)
+  await page.getByRole('button', { name: '다시 시도', exact: true }).click()
+  await expect(page.getByRole('region', { name: '오늘의 노트', exact: true }).getByRole('status')).toHaveText('자동 저장됨')
+  await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
   await page.reload()
   await expect(content).toHaveValue('실패해도 보관할 노트')
 })
