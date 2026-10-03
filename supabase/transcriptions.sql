@@ -1,4 +1,4 @@
--- workspace-access.sql 적용 후 실행합니다. 재실행해도 기존 필사는 유지됩니다.
+-- workspace-access.sql 적용 후 실행합니다. 재실행해도 기존 글는 유지됩니다.
 begin;
 create table if not exists public.transcriptions (
   id uuid primary key default gen_random_uuid(),

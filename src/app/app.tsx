@@ -8,7 +8,7 @@ import { CareerCalendarPage } from '@/pages/career-calendar-page'
 import { NotesPage } from '@/pages/notes-page'
 import { NoteDetailPage } from '@/pages/note-detail-page'
 import { LinksPage } from '@/pages/links-page'
-import { TranscriptionsPage } from '@/pages/transcriptions-page'
+import { WritingRoomPage } from '@/pages/writing-room-page'
 import { VocabularyPage } from '@/pages/vocabulary-page'
 import { VocabularyTestPage } from '@/pages/vocabulary-test-page'
 import { NewsPage } from '@/pages/news-page'
@@ -39,7 +39,7 @@ function WorkspaceContent({ page, token, hash, leave, leaving }: { page: string;
     await leave()
   }
   return <AppShell page={page} onLeave={onLeave} leaving={leaving}>
-    {page === 'career-calendar' ? <CareerCalendarPage key={token} token={token} hash={hash} /> : page === 'workspace' ? <WorkspacePage token={token} calendar={calendar} todos={todos} /> : page === 'calendar' ? validDate(date) ? <CalendarDayPage key={date} date={date} calendar={calendar} /> : <CalendarPage key={monthKey} calendar={calendar} monthKey={monthKey} /> : page === 'timetable' ? <TimetablePage token={token} /> : page === 'notes' ? noteId ? <NoteDetailPage key={`${token}:${hash}`} token={token} noteId={noteId} folderId={noteFolder} /> : <NotesPage key={noteFolder} token={token} folderId={noteFolder} /> : page === 'transcriptions' ? <TranscriptionsPage key={`${token}:${hash}`} token={token} hash={hash} /> : page === 'vocabulary' ? hash.split('?')[0] === '#/vocabulary/test' ? <VocabularyTestPage key={token} token={token} /> : <VocabularyPage key={token} token={token} /> : page === 'news' ? <NewsPage hash={hash} /> : page === 'weather' ? <WeatherPage /> : <LinksPage token={token} />}
+    {page === 'career-calendar' ? <CareerCalendarPage key={token} token={token} hash={hash} /> : page === 'workspace' ? <WorkspacePage token={token} calendar={calendar} todos={todos} /> : page === 'calendar' ? validDate(date) ? <CalendarDayPage key={date} date={date} calendar={calendar} /> : <CalendarPage key={monthKey} calendar={calendar} monthKey={monthKey} /> : page === 'timetable' ? <TimetablePage token={token} /> : page === 'notes' ? noteId ? <NoteDetailPage key={`${token}:${hash}`} token={token} noteId={noteId} folderId={noteFolder} /> : <NotesPage key={noteFolder} token={token} folderId={noteFolder} /> : page === 'writings' ? <WritingRoomPage key={`${token}:${hash}`} token={token} hash={hash} /> : page === 'vocabulary' ? hash.split('?')[0] === '#/vocabulary/test' ? <VocabularyTestPage key={token} token={token} /> : <VocabularyPage key={token} token={token} /> : page === 'news' ? <NewsPage hash={hash} /> : page === 'weather' ? <WeatherPage /> : <LinksPage token={token} />}
     <FloatingWorkspaceMemo memo={memo} />
   </AppShell>
 }
@@ -51,7 +51,7 @@ function subscribe(callback: () => void) {
 
 export function App() {
   const hash = useSyncExternalStore(subscribe, () => window.location.hash)
-  const page = /^#\/career-calendar(?:$|[/?])/.test(hash) ? 'career-calendar' : /^#\/transcriptions(?:$|[/?])/.test(hash) ? 'transcriptions' : /^#\/vocabulary(?:$|[/?])/.test(hash) ? 'vocabulary' : hash === '#/weather' ? 'weather' : /^#\/news(?:$|[/?])/.test(hash) ? 'news' : /^#\/notes(?:$|[/?])/.test(hash) ? 'notes' : hash === '#/links' ? 'links' : hash === '#/timetable' ? 'timetable' : /^#\/calendar(?:$|[/?])/.test(hash) ? 'calendar' : 'workspace'
+  const page = /^#\/career-calendar(?:$|[/?])/.test(hash) ? 'career-calendar' : /^#\/(?:writings|transcriptions)(?:$|[/?])/.test(hash) ? 'writings' : /^#\/vocabulary(?:$|[/?])/.test(hash) ? 'vocabulary' : hash === '#/weather' ? 'weather' : /^#\/news(?:$|[/?])/.test(hash) ? 'news' : /^#\/notes(?:$|[/?])/.test(hash) ? 'notes' : hash === '#/links' ? 'links' : hash === '#/timetable' ? 'timetable' : /^#\/calendar(?:$|[/?])/.test(hash) ? 'calendar' : 'workspace'
   return (
     <AppProviders>
       <WorkspaceAccess>{(leave, leaving, token) => (

@@ -12,7 +12,7 @@ const navigation = [
   { id: 'timetable', label: '수업 시간표', emoji: '📚' },
   { id: 'notes', label: '메모함', emoji: '📝' },
   { id: 'links', label: '링크함', emoji: '🔗' },
-  { id: 'transcriptions', label: '필사함', emoji: '✍️' },
+  { id: 'writings', label: '집필실', emoji: '✍️' },
   { id: 'vocabulary', label: '영단어 공부방', emoji: '📖' },
   { id: 'news', label: '뉴스함', emoji: '📰' },
   { id: 'weather', label: '날씨', emoji: '🌤️' },
@@ -21,7 +21,7 @@ const navigation = [
 const navigationGroups = [
   { label: '일정', icon: CalendarDays, ids: ['calendar', 'career-calendar', 'timetable'] },
   { label: '자료', icon: FolderOpen, ids: ['notes', 'links'] },
-  { label: '공부', icon: GraduationCap, ids: ['vocabulary', 'news', 'transcriptions'] },
+  { label: '공부', icon: GraduationCap, ids: ['vocabulary', 'news', 'writings'] },
   { label: '정보', icon: Info, ids: ['weather'] },
 ] as const
 

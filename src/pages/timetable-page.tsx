@@ -1,6 +1,7 @@
 import { PageHeader } from '@/components/layout/page-header'
 import { useRef, useState } from 'react'
 import { BookOpen, Plus } from 'lucide-react'
+import { Tooltip } from 'radix-ui'
 import { Button } from '@/components/ui/button'
 import { LessonEditor } from '@/features/timetable/lesson-editor'
 import { minutes, useTimetable, weekdays } from '@/features/timetable/use-timetable'
@@ -27,7 +28,7 @@ export function TimetablePage({ token }: { token: string }) {
     if (origin.current?.isConnected) origin.current.focus()
     else addButton.current?.focus()
   }
-  return <section aria-labelledby="timetable-title">
+  return <Tooltip.Provider delayDuration={200}><section aria-labelledby="timetable-title">
     <PageHeader className="pb-0"><div className="flex flex-wrap items-center justify-between gap-4"><h1 id="timetable-title" className="flex items-center gap-3 text-3xl tracking-tight"><span aria-hidden="true" className="shrink-0 text-2xl">📚</span>수업 시간표</h1><Button ref={addButton} type="button" disabled={timetable.loading || timetable.busy || !!timetable.error} onClick={() => open()}><Plus aria-hidden="true" className="size-4" />수업 추가</Button></div>
     {timetable.error && <p role="alert" className="mt-6 text-sm text-destructive">{timetable.error} <Button variant="outline" size="sm" onClick={timetable.retry}>다시 불러오기</Button></p>}
       {timetable.loading && <p role="status" className="mt-4 text-sm text-muted-foreground">기록을 불러오는 중…</p>}
@@ -43,7 +44,7 @@ export function TimetablePage({ token }: { token: string }) {
             <div className="relative bg-card" style={{ height }}>{hours.map(hour => <div key={hour} className="h-[72px] pr-2 pt-1 text-right text-[11px] text-muted-foreground">{String(hour).padStart(2, '0')}:00</div>)}</div>
             {weekdays.map((day, index) => <div key={day} aria-label={`${day}요일 수업`} className="relative border-l" style={{ height }}>
               {hours.map(hour => <div key={hour} aria-hidden="true" className="h-[72px] border-b"><div className="h-9 border-b border-dashed border-border/40" /></div>)}
-              {timetable.lessons.filter(lesson => lesson.days.includes(index)).sort((a, b) => a.start.localeCompare(b.start)).map(lesson => <button key={lesson.id} type="button" onClick={() => open(lesson)} data-color={lesson.color} aria-label={`${day}요일 ${lesson.name} ${lesson.start}–${lesson.end} 수정`} className="lesson-color absolute inset-x-1 flex items-center justify-center overflow-hidden px-2 py-1.5 text-center transition-[filter] hover:brightness-95 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring" style={{ top: (minutes(lesson.start) - startHour * 60) * 1.2, height: Math.max(6, (minutes(lesson.end) - minutes(lesson.start)) * 1.2 - 2) }} title={`${lesson.name}\n${lesson.start}–${lesson.end}${lesson.memo ? `\n${lesson.memo}` : ''}`}><span className="line-clamp-3 break-words text-sm">{lesson.name}</span></button>)}
+              {timetable.lessons.filter(lesson => lesson.days.includes(index)).sort((a, b) => a.start.localeCompare(b.start)).map(lesson => <Tooltip.Root key={lesson.id}><Tooltip.Trigger asChild><button type="button" onClick={() => open(lesson)} data-color={lesson.color} aria-label={`${day}요일 ${lesson.name} ${lesson.start}–${lesson.end} 수정`} className="lesson-color absolute inset-x-1 flex items-center justify-center overflow-hidden px-2 py-1.5 text-center transition-[filter] hover:brightness-95 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring" style={{ top: (minutes(lesson.start) - startHour * 60) * 1.2, height: Math.max(6, (minutes(lesson.end) - minutes(lesson.start)) * 1.2 - 2) }}><span className="line-clamp-3 break-words text-sm">{lesson.name}</span></button></Tooltip.Trigger><Tooltip.Portal><Tooltip.Content side="top" sideOffset={6} collisionPadding={12} className="z-50 max-w-[min(20rem,calc(100vw-2rem))] rounded-md bg-tooltip px-3 py-2 text-sm whitespace-pre-wrap break-words text-tooltip-foreground shadow-md">{`${lesson.name}\n${lesson.start}–${lesson.end}${lesson.memo ? `\n${lesson.memo}` : ''}`}</Tooltip.Content></Tooltip.Portal></Tooltip.Root>)}
             </div>)}
           </div>
         </div>
@@ -51,5 +52,5 @@ export function TimetablePage({ token }: { token: string }) {
       <div className="flex flex-wrap justify-between gap-2 border-t px-4 py-3 text-xs text-muted-foreground"><span>총 {timetable.lessons.length}개 수업 · 월–일</span><span>가로로 스크롤해 모든 요일을 볼 수 있어요.</span></div>
     </div>
     {editor && <LessonEditor lesson={editor.lesson} timetable={timetable} onClose={() => setEditor(null)} onRestoreFocus={restoreFocus} />}
-  </section>
+  </section></Tooltip.Provider>
 }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createTranscriptionsDatabase, callTranscriptions, transcriptionsSql } from './helpers/transcriptions-db.mjs'
 
-test('필사 CRUD, 최신순, 작성일 보존, 충돌과 세션 보호', async () => {
+test('집필실 글 CRUD, 최신순, 작성일 보존, 충돌과 세션 보호', async () => {
   const db = await createTranscriptionsDatabase()
   try {
     const [first] = await callTranscriptions(db, 'save', { title: ' 첫 글 ', content: '첫 문장\n\n둘째 문장' })
