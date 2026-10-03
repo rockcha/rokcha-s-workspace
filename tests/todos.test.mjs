@@ -140,3 +140,33 @@ test('필터로 숨긴 항목의 위치를 유지하며 양방향 이동, 경계
   assert.deepEqual(reorderVisibleTodos(items, ['a', 'b', 'c'], 'a', 'hidden', false), items)
   assert.deepEqual(reorderVisibleTodos(items, [], 'a', 'c', true), items)
 })
+
+const dailySource = await readFile(new URL('../src/features/todos/daily.ts', import.meta.url), 'utf8')
+const dailyJs = ts.transpileModule(dailySource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText
+const { isTodoCompleted } = await import('data:text/javascript;base64,' + Buffer.from(dailyJs).toString('base64'))
+test('데일리 체크는 한국 시간 초기화 경계와 재방문을 반영', () => {
+  const item = { completed: true, reset_time: '09:00', completed_at: '2026-10-02T10:00:00+09:00' }
+  assert.equal(isTodoCompleted(item, Date.parse('2026-10-03T08:59:59+09:00')), true)
+  assert.equal(isTodoCompleted(item, Date.parse('2026-10-03T09:00:00+09:00')), false)
+  assert.equal(isTodoCompleted(item, Date.parse('2026-10-10T09:00:00+09:00')), false)
+  assert.equal(isTodoCompleted({ ...item, completed_at: '2026-10-03T09:01:00+09:00' }, Date.parse('2026-10-03T10:00:00+09:00')), true)
+  assert.equal(isTodoCompleted({ ...item, reset_time: null }, Date.parse('2026-10-10T09:00:00+09:00')), true)
+})
+test('전체 삭제는 데일리를 보호하고 개별 삭제 및 초기화 시각 수정을 지원', async () => {
+  const db = await createWorkspaceDatabase()
+  try {
+    await call(db, 'todo_save', { id: randomUUID(), title: '일반', completed: true, revision: 0 })
+    let items = await call(db, 'todo_save', { id: randomUUID(), title: '운동하기', completed: true, revision: 0, resetTime: '09:00' })
+    const daily = items.find(item => item.reset_time)
+    assert.ok(daily.completed_at)
+    assert.equal((await call(db, 'todo_delete_all', { confirmed: true, items })).error, 'conflict')
+    items = await call(db, 'todo_delete_all', { confirmed: true, items: items.filter(item => !item.reset_time) })
+    assert.equal(items.length, 1)
+    assert.equal(items[0].id, daily.id)
+    items = await call(db, 'todo_save', { ...items[0], resetTime: '00:00' })
+    assert.equal(items[0].reset_time, '00:00')
+    assert.equal(items[0].completed_at, daily.completed_at)
+    await assert.rejects(call(db, 'todo_save', { ...items[0], resetTime: '25:00' }))
+    assert.deepEqual(await call(db, 'todo_delete', items[0]), [])
+  } finally { await db.close() }
+})

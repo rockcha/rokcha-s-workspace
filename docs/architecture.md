@@ -116,3 +116,6 @@ components/layout/page-header.tsx는 각 화면에서 재사용하는 고정 헤
 할 일은 features/todos의 useTodos와 TodoList로 구성합니다. 기존 useCollection과 manage_workspace_data의 todo_list/save/delete/reorder/delete_all을 재사용하며 workspace_todos 테이블에 저장합니다. priority 오름차순으로 조회하고 새 항목은 잠금 안에서 최대 priority + 1을 배정합니다. 완료·제목 수정은 순서를 바꾸지 않습니다. 순서 변경과 전체 삭제는 전체 항목의 ID·revision·개수·중복을 검증한 뒤 하나의 트랜잭션으로 적용합니다. 순위가 바뀐 행의 revision을 올리며 전체 삭제에는 confirmed: true가 필요합니다. 다른 기기의 추가·삭제·수정 이후 오래된 요청은 충돌로 거부합니다. 세션 기반 RLS와 직접 쓰기 차단을 유지합니다.
 
 use-todo-reorder.ts는 Pointer Events 기반 마우스·터치 드래그, 목록 가장자리 자동 스크롤, Escape 취소와 키보드 이동을 처리합니다. order.ts는 필터로 숨긴 항목의 자리를 유지하며 보이는 항목만 재배치합니다. 드래그 중에는 삽입 위치를 표시하고 서버 저장 성공 후 실제 순서를 반영하므로 실패 시 기존 순서를 유지합니다. 작업실 왼쪽 위의 오늘 일정·노트 카드는 항상 표시하며, 아래의 Radix Tabs는 다가오는 일정·다가오는 공고만 전환합니다. 왼쪽 카드 묶음과 오른쪽 할 일 리스트의 너비와 전체 높이를 맞춥니다. WorkspacePage에서 useCareerCalendar로 취업 일정을 조회하고 공고 탭에서만 조회 상태·실패·재시도를 표시합니다. 마감 전 항목을 날짜·시간순으로 정렬하며 기존 30초·화면 복귀 갱신으로 지난 공고를 제외합니다. 작업실 메모는 앱 공통 FloatingWorkspaceMemo에서만 표시합니다.
+
+
+데일리 할 일의 `reset_time`과 `completed_at`은 `supabase/workspace-data.sql`에서 추가합니다. `features/todos/daily.ts`는 한국 시간 기준 최근 초기화 시각과 완료 시각을 비교합니다. `useTodos`는 화면 복귀와 1초마다 완료 상태를 갱신하며 재방문에도 같은 규칙을 적용합니다. `todo_delete_all`은 일반 항목의 ID·revision을 검증하고 데일리 삭제를 서버에서도 차단합니다.

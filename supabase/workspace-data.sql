@@ -8,6 +8,8 @@ create table if not exists public.workspace_todos (
   created_at timestamptz not null default now()
 );
 -- 기존 표시 순서를 최초 우선순위로 보존합니다. 재실행 시 저장된 순서는 유지합니다.
+alter table public.workspace_todos add column if not exists reset_time text check (reset_time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+alter table public.workspace_todos add column if not exists completed_at timestamptz;
 alter table public.workspace_todos add column if not exists priority integer check (priority > 0);
 with ranked as (
   select id, row_number() over (order by completed, created_at desc, id)::integer as position
@@ -100,10 +102,18 @@ begin
       elsif current_item is null and coalesce((payload->>'revision')::integer, 0) <> 0 then
         return jsonb_build_object('error', 'conflict');
       end if;
-      insert into public.workspace_todos(id, title, completed, priority)
+      if payload->>'resetTime' is not null and payload->>'resetTime' !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then
+        raise exception 'Invalid reset time' using errcode = '22023';
+      end if;
+      insert into public.workspace_todos(id, title, completed, reset_time, completed_at, priority)
       values(target, btrim(payload->>'title'), (payload->>'completed')::boolean,
+        coalesce(payload->>'resetTime', current_item->>'reset_time'),
+        case when (payload->>'completed')::boolean then
+          case when current_item->'completed' = 'true'::jsonb and coalesce((payload->>'renewCompletion')::boolean, false) = false
+            then coalesce((current_item->>'completed_at')::timestamptz, now()) else now() end
+        else null end,
         coalesce((select max(priority) from public.workspace_todos), 0) + 1)
-      on conflict(id) do update set title=excluded.title, completed=excluded.completed, revision=public.workspace_todos.revision+1;
+      on conflict(id) do update set title=excluded.title, completed=excluded.completed, reset_time=excluded.reset_time, completed_at=excluded.completed_at, revision=public.workspace_todos.revision+1;
     when 'todo_reorder', 'todo_delete_all' then
       if action = 'todo_delete_all' and payload->'confirmed' is distinct from 'true'::jsonb then
         raise exception 'Explicit confirmation required' using errcode = '22023';
@@ -112,12 +122,12 @@ begin
       if jsonb_typeof(payload->'items') is distinct from 'array' then
         raise exception 'Todo order must be an array' using errcode = '22023';
       end if;
-      if jsonb_array_length(payload->'items') <> (select count(*) from public.workspace_todos)
+      if jsonb_array_length(payload->'items') <> (select count(*) from public.workspace_todos where action = 'todo_reorder' or reset_time is null)
         or (select count(distinct (value->>'id')::uuid) from jsonb_array_elements(payload->'items')) <> jsonb_array_length(payload->'items')
         or exists (
           select 1 from jsonb_array_elements(payload->'items') p
           left join public.workspace_todos t on t.id = (p.value->>'id')::uuid
-          where t.id is null or t.revision is distinct from (p.value->>'revision')::integer
+          where t.id is null or (action = 'todo_delete_all' and t.reset_time is not null) or t.revision is distinct from (p.value->>'revision')::integer
         ) then
         return jsonb_build_object('error', 'conflict');
       end if;
@@ -126,7 +136,7 @@ begin
         delete from public.workspace_todos t
         using jsonb_array_elements(payload->'items') p
         where t.id = (p.value->>'id')::uuid
-          and t.revision = (p.value->>'revision')::integer;
+          and t.revision = (p.value->>'revision')::integer and t.reset_time is null;
       else
       with ordered as (
         select (value->>'id')::uuid as id, ordinality::integer as position

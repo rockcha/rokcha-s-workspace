@@ -23,6 +23,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-tooltip: var(--tooltip);
+  --color-tooltip-foreground: var(--tooltip-foreground);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -63,6 +65,8 @@
   --border: #dfe6dc;
   --input: #dfe6dc;
   --ring: #426849;
+  --tooltip: #171717;
+  --tooltip-foreground: #ffffff;
   --lesson-sage-bg: #e8f1e5;
   --lesson-sage-fg: #34543a;
   --lesson-blue-bg: #e7f0fb;
