@@ -6,6 +6,7 @@ let db
 test('시간의 시·분을 숫자로 덮어쓰고 연속 숫자로 입력', async ({ page }) => {
   await page.goto('/#/calendar/2026-12-31')
   await page.getByRole('button', { name: '일정 추가', exact: true }).click()
+  await expect(page.getByLabel('시간 (선택)', { exact: true })).toHaveValue('00:00')
   await page.getByLabel('제목', { exact: true }).fill('숫자 시간 입력')
   const time = page.getByLabel('시간 (선택)', { exact: true })
   await time.fill('1430')
@@ -102,6 +103,7 @@ test('날짜 상세·여러 일정·노트 직접 편집·날짜별 분리·시�
     await page.getByRole('button', { name: '일정 추가', exact: true }).click()
     await page.getByLabel('제목', { exact: true }).fill(title)
     if (time) await page.getByLabel('시간 (선택)', { exact: true }).fill(time)
+    else if (title === '종일 준비') await page.getByLabel('시간 (선택)', { exact: true }).fill('')
     await page.getByRole('button', { name: '저장', exact: true }).click()
   }
   await expect(page.getByLabel('제목', { exact: true })).toHaveCount(0)
@@ -119,7 +121,7 @@ test('날짜 상세·여러 일정·노트 직접 편집·날짜별 분리·시�
   const list = page.getByRole('list', { name: '오늘 일정 목록' })
   await expect(list.locator('li')).toHaveCount(4)
   const text = await list.locator('li').allTextContents()
-  expect(text.map(t => t.slice(0, 5))).toEqual(['09:00', '12:00', '15:00', '종일종일 '])
+  expect(text.map(t => t.slice(0, 5))).toEqual(['09:00', '12:00', '15:00', '23:59'])
 
   const note = page.getByRole('region', { name: '오늘 노트 내용' })
   expect(await note.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true)

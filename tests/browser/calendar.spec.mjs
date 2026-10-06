@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
   await routeWorkspaceData(page, db)
 })
 
-async function add(page, { date = '2026-12-31', title, note = false, time = '' }) {
+async function add(page, { date = '2026-12-31', title, note = false, time = null }) {
   await page.goto(`/#/calendar/${date}`)
   if (note) {
     const content = page.getByLabel('오늘의 노트 내용')
@@ -26,7 +26,7 @@ async function add(page, { date = '2026-12-31', title, note = false, time = '' }
   const dialog = page.getByRole('dialog', { name: note ? '노트 추가' : '일정 추가' })
   await dialog.getByLabel(note ? '내용' : '제목', { exact: true }).fill(title)
   await dialog.getByLabel('날짜', { exact: true }).fill(date)
-  if (time) await dialog.getByLabel('시간 (선택)', { exact: true }).fill(time)
+  if (time !== null) await dialog.getByLabel('시간 (선택)', { exact: true }).fill(time)
   if (note) await expect(dialog.getByLabel('시간 (선택)', { exact: true })).toHaveCount(0)
   await dialog.getByRole('button', { name: '저장', exact: true }).click()
   await expect(dialog).toBeHidden()
@@ -57,14 +57,15 @@ test('월간 캘린더에서 날짜를 선택해 일정 빠르게 추가', async
   await expect(page.getByLabel('시간 (선택)', { exact: true })).toHaveValue('13:45')
 })
 
-test('간단한 시간 입력과 Enter 저장, 빈 시간은 종일로 저장', async ({ page }) => {
+test('간단한 시간 입력과 Enter 저장, 빈 시간은 23:59로 저장', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 })
   await page.goto('/#/calendar/2026-12-31')
-  for (const [raw, expected] of [['1', '01:00'], ['130', '01:30'], ['오후 1시', '13:00'], ['', '']]) {
+  for (const [raw, expected] of [['1', '01:00'], ['130', '01:30'], ['오후 1시', '13:00'], ['', '23:59']]) {
     const title = `시간 확인 ${raw || '종일'}`
     await page.getByRole('button', { name: '일정 추가', exact: true }).click()
     await page.getByLabel('제목', { exact: true }).fill(title)
     const input = page.getByLabel('시간 (선택)', { exact: true })
+    if (raw !== '') await expect(input).toHaveValue('00:00')
     await input.fill(raw)
     await input.press('Enter')
     await expect(page.getByRole('dialog', { name: '일정 추가', exact: true })).toBeHidden()
@@ -78,11 +79,11 @@ test('간단한 시간 입력과 Enter 저장, 빈 시간은 종일로 저장', 
   await page.getByRole('button', { name: '저장', exact: true }).click()
   await page.reload()
   await page.getByRole('button', { name: '시간 확인 130 수정·삭제', exact: true }).click()
-  await expect(page.getByLabel('시간 (선택)', { exact: true })).toHaveValue('')
+  await expect(page.getByLabel('시간 (선택)', { exact: true })).toHaveValue('23:59')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
 
-test('모바일 일정 시간 입력·선택·종일 전환과 잘못된 시간 차단', async ({ page }) => {
+test('모바일 일정 시간 입력·선택·23:59 설정과 잘못된 시간 차단', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 })
   await page.goto('/#/calendar/2026-12-31')
   await page.getByRole('button', { name: '일정 추가', exact: true }).click()
@@ -106,12 +107,12 @@ test('모바일 일정 시간 입력·선택·종일 전환과 잘못된 시간 
   await expect(page.getByRole('dialog', { name: '시간 (선택) 선택', exact: true })).toHaveCSS('opacity', '1')
   await page.screenshot({ path: 'test-results/calendar-time-mobile.png', fullPage: true })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  await page.getByRole('button', { name: '종일로 설정' }).click()
-  await expect(input).toHaveValue('')
+  await page.getByRole('button', { name: '23:59로 설정' }).click()
+  await expect(input).toHaveValue('23:59')
   await dialog.getByRole('button', { name: '저장', exact: true }).click()
   await page.reload()
   await page.getByRole('button', { name: /시간 입력 확인/ }).click()
-  await expect(page.getByLabel('시간 (선택)', { exact: true })).toHaveValue('')
+  await expect(page.getByLabel('시간 (선택)', { exact: true })).toHaveValue('23:59')
 })
 
 test('일정·노트 CRUD와 오늘 목록, 연도 경계 D-day 및 저장 유지', async ({ page }) => {
@@ -186,10 +187,10 @@ test('일정·노트 CRUD와 오늘 목록, 연도 경계 D-day 및 저장 유�
 test('다가오는 일정의 하루 미만 남은 시간과 자동 갱신', async ({ page }) => {
   await add(page, { title: '곧 시작', time: '12:01' })
   await add(page, { title: '이미 시작', time: '11:00' })
-  await add(page, { title: '오늘 종일' })
+  await add(page, { title: '오늘 종일', time: '' })
   await add(page, { title: '자정 일정', date: '2027-01-01', time: '00:00' })
   await add(page, { title: '정확히 하루', date: '2027-01-01', time: '12:00' })
-  await add(page, { title: '종일 일정', date: '2027-01-01' })
+  await add(page, { title: '종일 일정', date: '2027-01-01', time: '' })
   await page.goto('/#/workspace')
   await page.getByRole('tab', { name: '다가오는 일정', exact: true }).click()
   const list = page.getByRole('list', { name: '다가오는 일정 목록' })

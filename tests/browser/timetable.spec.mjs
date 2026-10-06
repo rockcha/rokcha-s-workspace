@@ -57,7 +57,7 @@ test('주간 반복·수업 CRUD·색상·새로고침·모바일 스크롤', as
   await lesson.hover()
   const tooltip = page.getByRole('tooltip')
   await expect(tooltip).toContainText('교재와 필기구 준비')
-  await expect(page.locator('[data-radix-popper-content-wrapper] > .bg-tooltip')).toHaveCSS('background-color', 'rgb(23, 23, 23)')
+  await expect(page.locator('[data-radix-popper-content-wrapper] > .bg-tooltip')).toHaveCSS('background-color', 'rgb(0, 0, 0)')
   await expect(page.locator('[data-radix-popper-content-wrapper] > .bg-tooltip')).toHaveCSS('color', 'rgb(255, 255, 255)')
   await page.keyboard.press('Escape')
   await expect(tooltip).toBeHidden()

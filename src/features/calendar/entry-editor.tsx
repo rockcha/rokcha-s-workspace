@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import type { CalendarDraft, CalendarEntry, CalendarState } from '@/features/calendar/use-calendar'
 
 export function EntryEditor({ date, entry, type = 'event', calendar, onClose, onCloseAutoFocus }: { date: string; entry?: CalendarEntry; type?: CalendarEntry['type']; calendar: CalendarState; onClose: () => void; onCloseAutoFocus?: () => void }) {
-  const [draft, setDraft] = useState<CalendarDraft>(entry ?? { type, date, time: '', title: '', content: '' })
+  const [draft, setDraft] = useState<CalendarDraft>(entry ?? { type, date, time: type === 'event' ? '00:00' : '', title: '', content: '' })
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [newId] = useState(() => crypto.randomUUID())
   const isNote = draft.type === 'note'

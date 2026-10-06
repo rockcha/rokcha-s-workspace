@@ -80,7 +80,7 @@ export function useCalendar(token: string) {
   }, [dirtyNotes])
   async function save(draft: CalendarDraft, id?: string) {
     if (!(draft.type === 'note' ? draft.content : draft.title).trim() || !validDate(draft.date)) return false
-    const entry = { ...draft, title: draft.type === 'note' ? '' : draft.title.trim(), time: draft.type === 'note' ? '' : draft.time, id: id ?? crypto.randomUUID(), revision: entries.find(item => item.id === id)?.revision ?? 0 }
+    const entry = { ...draft, title: draft.type === 'note' ? '' : draft.title.trim(), time: draft.type === 'note' ? '' : draft.time || '23:59', id: id ?? crypto.randomUUID(), revision: entries.find(item => item.id === id)?.revision ?? 0 }
     const error = await collection.mutate('save', entry)
     if (error) toast.error(error, { id: 'calendar-mutation' })
     else toast.success(`${draft.type === 'note' ? '노트를' : '일정을'} ${id ? '수정' : '추가'}했어요.`, { id: 'calendar-mutation' })
