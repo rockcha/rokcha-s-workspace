@@ -1,5 +1,7 @@
 # 파일 구조와 확장 기준
 
+수업 내역 경로는 `#/timetable/history`이며 `pages/lesson-history-page.tsx`와 `features/lesson-history/`가 화면·검증·월별 집계·PDF 생성을 담당합니다. `supabase/lesson-history.sql`의 독립 테이블 `lesson_records`와 RPC `manage_lesson_records`는 세션 검증·RLS·직접 쓰기 차단·revision 충돌 검사를 적용합니다. 수업명은 저장 시 복사하여 시간표 변경·삭제의 영향을 받지 않습니다. 날짜와 HH:mm 시간은 시간대 변환 없이 보존하고 같은 날의 종료 시간은 시작보다 늦어야 합니다. 같은 수업명끼리 합산하며 분 단위 합계를 계산합니다. PDF는 번들 글꼴로 그린 A4 JPEG 페이지를 로컬에서 생성하므로 한글이 유지되지만 텍스트 선택·검색은 지원하지 않습니다. 긴 수업명은 줄바꿈하고 내역이 많으면 페이지를 나눕니다.
+
 사이드바의 일정·자료·공부·정보 그룹은 `components/layout/app-shell.tsx`에서 접힘 상태를 관리합니다. 접힌 그룹 이름을 localStorage의 `rokcha-workspace-navigation-collapsed` 키에 저장하여 새로고침·재방문 시 복원합니다. 저장 기록이 없거나 손상된 경우 모두 펼치며, 저장소 접근이 차단되어도 메뉴 조작은 유지합니다.
 
 취업 캘린더는 `pages/career-calendar-page.tsx`의 월간·날짜 상세 화면과 `features/career-calendar/`의 API·상태·편집기로 구성합니다. 경로는 `#/career-calendar?month=YYYY-MM`, `#/career-calendar/YYYY-MM-DD`입니다. `supabase/career-calendar.sql`은 독립적인 `career_entries` 테이블과 `manage_career_entries` RPC를 생성합니다. 마감 날짜·HH:mm 시간은 필수이며 종일 일정은 없습니다. 날짜·시각은 기존 캘린더처럼 입력한 값을 보존하고 시간대 변환은 하지 않습니다. 링크는 이름과 HTTP(S) 주소를 가진 배열로 보관하며 수정·삭제에 revision을 검사합니다. 신규 일정은 클라이언트 UUID를 고정해 동일 요청으로 중복 생성하지 않습니다. 세션 기반 RLS와 직접 쓰기 차단을 적용합니다. 공통 URL 검증은 `lib/web-url.ts`에서 링크함과 함께 사용합니다.

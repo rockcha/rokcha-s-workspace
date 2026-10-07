@@ -20,6 +20,7 @@ import { FloatingWorkspaceMemo } from '@/features/workspace-memo/workspace-memo'
 import { useCalendar, validDate } from '@/features/calendar/use-calendar'
 import { CalendarDayPage } from '@/pages/calendar-day-page'
 import { TimetablePage } from '@/pages/timetable-page'
+import { LessonHistoryPage } from '@/pages/lesson-history-page'
 import { LocalImport } from '@/features/workspace-data/local-import'
 
 function WorkspaceContent({ page, token, hash, leave, leaving }: { page: string; token: string; hash: string; leave: () => Promise<void>; leaving: boolean }) {
@@ -39,7 +40,7 @@ function WorkspaceContent({ page, token, hash, leave, leaving }: { page: string;
     await leave()
   }
   return <AppShell page={page} onLeave={onLeave} leaving={leaving}>
-    {page === 'career-calendar' ? <CareerCalendarPage key={token} token={token} hash={hash} /> : page === 'workspace' ? <WorkspacePage token={token} calendar={calendar} todos={todos} /> : page === 'calendar' ? validDate(date) ? <CalendarDayPage key={date} date={date} calendar={calendar} /> : <CalendarPage key={monthKey} calendar={calendar} monthKey={monthKey} /> : page === 'timetable' ? <TimetablePage token={token} /> : page === 'notes' ? noteId ? <NoteDetailPage key={`${token}:${hash}`} token={token} noteId={noteId} folderId={noteFolder} /> : <NotesPage key={noteFolder} token={token} folderId={noteFolder} /> : page === 'writings' ? <WritingRoomPage key={`${token}:${hash}`} token={token} hash={hash} /> : page === 'vocabulary' ? hash.split('?')[0] === '#/vocabulary/test' ? <VocabularyTestPage key={token} token={token} /> : <VocabularyPage key={token} token={token} /> : page === 'news' ? <NewsPage hash={hash} /> : page === 'weather' ? <WeatherPage /> : <LinksPage token={token} />}
+    {page === 'career-calendar' ? <CareerCalendarPage key={token} token={token} hash={hash} /> : page === 'workspace' ? <WorkspacePage token={token} calendar={calendar} todos={todos} /> : page === 'calendar' ? validDate(date) ? <CalendarDayPage key={date} date={date} calendar={calendar} /> : <CalendarPage key={monthKey} calendar={calendar} monthKey={monthKey} /> : page === 'timetable' ? hash.split('?')[0] === '#/timetable/history' ? <LessonHistoryPage token={token} /> : <TimetablePage token={token} /> : page === 'notes' ? noteId ? <NoteDetailPage key={`${token}:${hash}`} token={token} noteId={noteId} folderId={noteFolder} /> : <NotesPage key={noteFolder} token={token} folderId={noteFolder} /> : page === 'writings' ? <WritingRoomPage key={`${token}:${hash}`} token={token} hash={hash} /> : page === 'vocabulary' ? hash.split('?')[0] === '#/vocabulary/test' ? <VocabularyTestPage key={token} token={token} /> : <VocabularyPage key={token} token={token} /> : page === 'news' ? <NewsPage hash={hash} /> : page === 'weather' ? <WeatherPage /> : <LinksPage token={token} />}
     <FloatingWorkspaceMemo memo={memo} />
   </AppShell>
 }
@@ -51,7 +52,7 @@ function subscribe(callback: () => void) {
 
 export function App() {
   const hash = useSyncExternalStore(subscribe, () => window.location.hash)
-  const page = /^#\/career-calendar(?:$|[/?])/.test(hash) ? 'career-calendar' : /^#\/(?:writings|transcriptions)(?:$|[/?])/.test(hash) ? 'writings' : /^#\/vocabulary(?:$|[/?])/.test(hash) ? 'vocabulary' : hash === '#/weather' ? 'weather' : /^#\/news(?:$|[/?])/.test(hash) ? 'news' : /^#\/notes(?:$|[/?])/.test(hash) ? 'notes' : hash === '#/links' ? 'links' : hash === '#/timetable' ? 'timetable' : /^#\/calendar(?:$|[/?])/.test(hash) ? 'calendar' : 'workspace'
+  const page = /^#\/career-calendar(?:$|[/?])/.test(hash) ? 'career-calendar' : /^#\/(?:writings|transcriptions)(?:$|[/?])/.test(hash) ? 'writings' : /^#\/vocabulary(?:$|[/?])/.test(hash) ? 'vocabulary' : hash === '#/weather' ? 'weather' : /^#\/news(?:$|[/?])/.test(hash) ? 'news' : /^#\/notes(?:$|[/?])/.test(hash) ? 'notes' : hash === '#/links' ? 'links' : /^#\/timetable(?:$|[/?])/.test(hash) ? 'timetable' : /^#\/calendar(?:$|[/?])/.test(hash) ? 'calendar' : 'workspace'
   return (
     <AppProviders>
       <WorkspaceAccess>{(leave, leaving, token) => (
